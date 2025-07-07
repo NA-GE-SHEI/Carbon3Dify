@@ -167,65 +167,65 @@ def main():
     start = time.time()
     overall_success = True
     
-    # try:
-    #     logger.info("🔍 開始執行椅子辨識...")
-    #     print("Exec identifyChair...")
-    #     identifyChair_result = subprocess.run([yolo, identifyChair_path], 
-    #                         text=True)
-    #     if identifyChair_result.returncode == 0:
-    #         print("Successfully!")
-    #         logger.info("✅ 椅子辨識完成")
-    #     else:
-    #         logger.error("❌ 椅子辨識失敗")
-    #         overall_success = False
-    # except Exception as e:
-    #     print(e)
-    #     logging.error(f"椅子辨識異常: {e}")
-    #     overall_success = False
-    #     # 可以選擇是否繼續執行後續步驟
-    #     # sys.exit()
+    try:
+        logger.info("🔍 開始執行椅子辨識...")
+        print("Exec identifyChair...")
+        identifyChair_result = subprocess.run([yolo, identifyChair_path], 
+                            text=True)
+        if identifyChair_result.returncode == 0:
+            print("Successfully!")
+            logger.info("✅ 椅子辨識完成")
+        else:
+            logger.error("❌ 椅子辨識失敗")
+            overall_success = False
+    except Exception as e:
+        print(e)
+        logging.error(f"椅子辨識異常: {e}")
+        overall_success = False
+        # 可以選擇是否繼續執行後續步驟
+        # sys.exit()
     
-    # try:
-    #     logger.info("🎨 開始執行材質檢測...")
-    #     print("Exec materialDetection...")
-    #     materialDetection_result = subprocess.run([mmsegmentation, materialDetection_path], 
-    #                         text=True)
-    #     if materialDetection_result.returncode == 0:
-    #         print("Successfully!")
-    #         logger.info("✅ 材質檢測完成")
-    #     else:
-    #         logger.error("❌ 材質檢測失敗")
-    #         overall_success = False
-    # except Exception as e:
-    #     print(e)
-    #     logging.error(f"材質檢測異常: {e}")
-    #     overall_success = False
-    #     # 材質檢測失敗不影響後續3D生成
+    try:
+        logger.info("🎨 開始執行材質檢測...")
+        print("Exec materialDetection...")
+        materialDetection_result = subprocess.run([mmsegmentation, materialDetection_path], 
+                            text=True)
+        if materialDetection_result.returncode == 0:
+            print("Successfully!")
+            logger.info("✅ 材質檢測完成")
+        else:
+            logger.error("❌ 材質檢測失敗")
+            overall_success = False
+    except Exception as e:
+        print(e)
+        logging.error(f"材質檢測異常: {e}")
+        overall_success = False
+        # 材質檢測失敗不影響後續3D生成
     
-    # try:
-    #     logger.info("🏗️ 開始執行TRELLIS 3D模型生成...")
-    #     print("Exec trellisAutoGeneration...")
-    #     trellis_result = subprocess.run([trellis, trellis_path], 
-    #                         text=True)
-    #     if trellis_result.returncode == 0:
-    #         print("Successfully!")
-    #         logger.info("✅ TRELLIS 3D模型生成完成")
-    #     else:
-    #         logger.error("❌ TRELLIS 3D模型生成失敗")
-    #         overall_success = False
-    #         # TRELLIS失敗則無法進行後續3D處理
-    #         logger.error("由於TRELLIS生成失敗，跳過後續3D處理流程")
-    #         et = time.time() - start
-    #         print(f"總耗時: {et:.2f}秒")
-    #         return
-    # except Exception as e:
-    #     print(e)
-    #     logging.error(f"TRELLIS生成異常: {e}")
-    #     overall_success = False
-    #     logger.error("由於TRELLIS生成異常，跳過後續3D處理流程")
-    #     et = time.time() - start
-    #     print(f"總耗時: {et:.2f}秒")
-    #     return
+    try:
+        logger.info("🏗️ 開始執行TRELLIS 3D模型生成...")
+        print("Exec trellisAutoGeneration...")
+        trellis_result = subprocess.run([trellis, trellis_path], 
+                            text=True)
+        if trellis_result.returncode == 0:
+            print("Successfully!")
+            logger.info("✅ TRELLIS 3D模型生成完成")
+        else:
+            logger.error("❌ TRELLIS 3D模型生成失敗")
+            overall_success = False
+            # TRELLIS失敗則無法進行後續3D處理
+            logger.error("由於TRELLIS生成失敗，跳過後續3D處理流程")
+            et = time.time() - start
+            print(f"總耗時: {et:.2f}秒")
+            return
+    except Exception as e:
+        print(e)
+        logging.error(f"TRELLIS生成異常: {e}")
+        overall_success = False
+        logger.error("由於TRELLIS生成異常，跳過後續3D處理流程")
+        et = time.time() - start
+        print(f"總耗時: {et:.2f}秒")
+        return
     
     # ======================== 新增：3D模型處理工作流程 ========================
     try:
@@ -280,9 +280,9 @@ def main():
     
     logger.info("=" * 60)
     logger.info("📊 處理結果摘要:")
-    # logger.info(f"   - 椅子辨識: {'✅' if identifyChair_result.returncode == 0 else '❌'}")
-    # logger.info(f"   - 材質檢測: {'✅' if 'materialDetection_result' in locals() and materialDetection_result.returncode == 0 else '❌'}")
-    # logger.info(f"   - 3D模型生成: {'✅' if 'trellis_result' in locals() and trellis_result.returncode == 0 else '❌'}")
+    logger.info(f"   - 椅子辨識: {'✅' if identifyChair_result.returncode == 0 else '❌'}")
+    logger.info(f"   - 材質檢測: {'✅' if 'materialDetection_result' in locals() and materialDetection_result.returncode == 0 else '❌'}")
+    logger.info(f"   - 3D模型生成: {'✅' if 'trellis_result' in locals() and trellis_result.returncode == 0 else '❌'}")
     logger.info(f"   - 3D模型處理: {'✅' if 'workflow_success' in locals() and workflow_success else '❌'}")
     logger.info(f"   - 總執行時間: {et:.2f}秒")
     
