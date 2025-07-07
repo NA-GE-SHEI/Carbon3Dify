@@ -1,1 +1,0 @@
-identifyChair.py
