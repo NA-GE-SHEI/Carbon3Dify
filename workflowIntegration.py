@@ -225,7 +225,7 @@ class WorkflowIntegration:
             self.timing_records['step_3'] = step_time
             
             if result['success']:
-                logger.info(f"✅ 步驟3完成: 分析了 {result['total_analyzed']} 個文件 (耗時: {step_time:.2f}秒)")
+                logger.info(f"✅ 步驟3完成: 分析了 {result['total_converted']} 個文件 (耗時: {step_time:.2f}秒)")
                 return result
             else:
                 logger.error(f"❌ 步驟3失敗: {result.get('error', 'Unknown error')}")
@@ -250,46 +250,48 @@ class WorkflowIntegration:
                 logger.error(f"CSV數據文件不存在: {csv_file}")
                 return {'success': False, 'error': f'CSV file not found: {csv_file}'}
             
-            # 準備參數
+            # 準備Bootstrap參數（只傳遞Bootstrap腳本認識的參數）
             bootstrap_config = self.config['bootstrap']
             analysis_config = self.config['analysis']
-            chair_config = self.config['chair_params']
             
-            # 構建命令參數
-            args_dict = {
+            # 構建命令參數 - 只包含bootstrap腳本支援的參數
+            bootstrap_args = {
                 'n_iterations': bootstrap_config['n_iterations'],
                 'ci_level': bootstrap_config['ci_level'],
-                'skip_execution': bootstrap_config['skip_execution'],
                 'data_file': csv_file,
                 'output_dir': self.config['output_dirs']['bootstrap_analysis'],
                 'model_type': analysis_config['model_type'],
-                'is_square': chair_config['is_square'],
-                'is_round': chair_config['is_round'],
-                'seat_area': chair_config['seat_area'],
-                'seat_thickness': chair_config['seat_thickness'],
-                'true_weight': chair_config['true_weight']
+                'encoding': 'utf-8'  # 使用UTF-8編碼
             }
             
             # 模擬命令行參數
             import sys
-            from types import SimpleNamespace
-            
-            # 保存原始argv
             original_argv = sys.argv.copy()
             
             try:
-                # 設置模擬的命令行參數
+                # 設置模擬的命令行參數 - 只包含bootstrap腳本認識的參數
                 sys.argv = ['bootstrapV2_enhanced.py']
-                for key, value in args_dict.items():
+                for key, value in bootstrap_args.items():
                     if isinstance(value, bool):
                         if value:
                             sys.argv.append(f'--{key}')
                     else:
                         sys.argv.extend([f'--{key}', str(value)])
                 
+                logger.info(f"Bootstrap命令行參數: {' '.join(sys.argv[1:])}")
+                
                 # 導入並執行Bootstrap分析
-                from calculate_carbon.bootstrapV2 import main as bootstrap_main
-                bootstrap_main()
+                try:
+                    from calculate_carbon.bootstrapV2 import main as bootstrap_main
+                    bootstrap_main()
+                except ImportError:
+                    # 如果導入失敗，嘗試直接調用
+                    logger.warning("無法導入bootstrap模組，嘗試直接執行")
+                    import subprocess
+                    cmd = [sys.executable, 'calculate_carbon/bootstrapV2.py'] + sys.argv[1:]
+                    result = subprocess.run(cmd, capture_output=True, text=True)
+                    if result.returncode != 0:
+                        raise Exception(f"Bootstrap執行失敗: {result.stderr}")
                 
                 step_time = time.time() - step_start_time
                 self.timing_records['step_4'] = step_time
@@ -304,9 +306,9 @@ class WorkflowIntegration:
         except Exception as e:
             logger.error(f"❌ 步驟4執行異常: {e}")
             return {'success': False, 'error': str(e)}
-    
+
     def step_5_enhanced_analysis(self) -> Dict:
-        """步驟5: 增強隨機森林分析"""
+        """步驟5: 增強隨機森林分析 - 修復版本"""
         logger.info("=" * 80)
         logger.info("🔄 步驟5: 增強隨機森林分析")
         logger.info("=" * 80)
@@ -324,36 +326,36 @@ class WorkflowIntegration:
             analysis_config = self.config['analysis']
             chair_config = self.config['chair_params']
             
-            # 構建參數對象
-            from types import SimpleNamespace
-            args = SimpleNamespace(
-                data_file=csv_file,
-                encoding='big5',  # 根據原始腳本默認值
-                output_dir=self.config['output_dirs']['enhanced_analysis'],
-                model_type=analysis_config['model_type'],
-                test_size=analysis_config['test_size'],
-                random_state=analysis_config['random_state'],
-                n_estimators=analysis_config['n_estimators'],
-                max_depth=analysis_config['max_depth'],
-                is_square=chair_config['is_square'],
-                is_round=chair_config['is_round'],
-                seat_area=chair_config['seat_area'],
-                seat_thickness=chair_config['seat_thickness'],
-                true_weight=chair_config['true_weight'],
-                back_height=None,
-                back_volume=0.000390 * 1000000,
-                leg_height=0.3737 * 100,
-                leg_volume=0.001550 * 1000000,
-                seat_volume=0.002771 * 1000000,
-                svr_kernel='rbf',
-                svr_c=1.0,
-                svr_epsilon=0.1,
-                dpi=300,
-                comparison_chairs=None
-            )
+            # 構建enhanced_rf_analysis腳本的命令行參數
+            enhanced_args = {
+                'data_file': csv_file,
+                'encoding': 'utf-8',
+                'output_dir': self.config['output_dirs']['enhanced_analysis'],
+                'model_type': analysis_config['model_type'],
+                'test_size': analysis_config.get('test_size', 0.2),
+                'random_state': analysis_config.get('random_state', 42),
+                'n_estimators': analysis_config.get('n_estimators', 100),
+                'max_depth': analysis_config.get('max_depth', 10),
+                # 椅子特徵參數
+                'is_square': chair_config['is_square'],
+                'is_round': chair_config['is_round'],
+                'seat_area': chair_config['seat_area'],
+                'seat_thickness': chair_config['seat_thickness'],
+                'true_weight': chair_config['true_weight'],
+                # 其他可選參數
+                'back_height': chair_config.get('back_height'),
+                'back_volume': chair_config.get('back_volume', 0.000390 * 1000000),
+                'leg_height': chair_config.get('leg_height', 0.3737 * 100),
+                'leg_volume': chair_config.get('leg_volume', 0.001550 * 1000000),
+                'seat_volume': chair_config.get('seat_volume', 0.002771 * 1000000),
+                'svr_kernel': analysis_config.get('svr_kernel', 'rbf'),
+                'svr_c': analysis_config.get('svr_c', 1.0),
+                'svr_epsilon': analysis_config.get('svr_epsilon', 0.1),
+                'dpi': 300
+            }
             
-            # 導入並執行Enhanced分析
-            from calculate_carbon.enhanced_rf_analysis import main as enhanced_main
+            # 過濾掉None值
+            enhanced_args = {k: v for k, v in enhanced_args.items() if v is not None}
             
             # 保存原始argv並設置新的
             import sys
@@ -362,19 +364,33 @@ class WorkflowIntegration:
             try:
                 # 設置模擬的命令行參數
                 sys.argv = ['enhanced_rf_analysis_enhanced.py']
+                for key, value in enhanced_args.items():
+                    if isinstance(value, bool):
+                        if value:
+                            sys.argv.append(f'--{key}')
+                    else:
+                        sys.argv.extend([f'--{key}', str(value)])
                 
-                # 直接調用main函數並傳入args（需要修改main函數支持）
-                result = enhanced_main()
+                logger.info(f"Enhanced分析命令行參數: {' '.join(sys.argv[1:])}")
+                
+                # 導入並執行Enhanced分析
+                try:
+                    from calculate_carbon.enhanced_rf_analysis import main as enhanced_main
+                    enhanced_main()
+                except ImportError:
+                    # 如果導入失敗，嘗試直接調用
+                    logger.warning("無法導入enhanced_rf_analysis模組，嘗試直接執行")
+                    import subprocess
+                    cmd = [sys.executable, 'calculate_carbon/enhanced_rf_analysis.py'] + sys.argv[1:]
+                    result = subprocess.run(cmd, capture_output=True, text=True)
+                    if result.returncode != 0:
+                        raise Exception(f"Enhanced分析執行失敗: {result.stderr}")
                 
                 step_time = time.time() - step_start_time
                 self.timing_records['step_5'] = step_time
                 
-                if result:
-                    logger.info(f"✅ 步驟5完成: 增強分析 (耗時: {step_time:.2f}秒)")
-                    return {'success': True, 'result': result}
-                else:
-                    logger.warning("⚠️  步驟5完成但返回None")
-                    return {'success': True, 'result': None}
+                logger.info(f"✅ 步驟5完成: 增強分析 (耗時: {step_time:.2f}秒)")
+                return {'success': True, 'output_dir': self.config['output_dirs']['enhanced_analysis']}
                 
             finally:
                 # 恢復原始argv
@@ -383,7 +399,7 @@ class WorkflowIntegration:
         except Exception as e:
             logger.error(f"❌ 步驟5執行異常: {e}")
             return {'success': False, 'error': str(e)}
-    
+        
     def run_workflow(self, start_step: int = 1, end_step: int = 5) -> Dict:
         """
         運行完整工作流程

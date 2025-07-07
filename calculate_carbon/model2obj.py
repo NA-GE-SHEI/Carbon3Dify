@@ -8,43 +8,45 @@ import logging
 from typing import Dict, List, Tuple
 import time
 
-# 設置日誌
+
+# Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+
 def convert_glb_to_obj(input_file, output_file=None):
     """
-    將 glb, obj, ply, dae, 3mf... 文件轉換為 .obj 格式
+    Convert glb, obj, ply, dae, 3mf... files to .obj format
     
-    參數:
-        input_file (str): 輸入的 GLB 文件路徑
-        output_file (str, optional): 輸出的 OBJ 文件路徑，若未指定則使用輸入文件名但改為 .obj 後綴
+    Args:
+        input_file (str): Input GLB file path
+        output_file (str, optional): Output OBJ file path, if not specified, use input filename with .obj suffix
     
-    返回:
-        result: function成功與否(success, fail)
-        msg: success-輸出文件的路徑, fail-錯誤信息
+    Returns:
+        result: Function success status (success, fail)
+        msg: success-output file path, fail-error message
     """
     try:
         if not os.path.exists(input_file):
-            raise FileNotFoundError(f"輸入文件 '{input_file}' 不存在")
+            raise FileNotFoundError(f"Input file '{input_file}' does not exist")
         
         if output_file is None:
             base_name = os.path.splitext(input_file)[0]
             output_file = f"{base_name}.obj"
         
-        logger.info(f"加載文件: {input_file}")
+        logger.info(f"Loading file: {input_file}")
         scene = trimesh.load(input_file)
         
-        logger.info(f"轉換為 OBJ 並保存至: {output_file}")
+        logger.info(f"Converting to OBJ and saving to: {output_file}")
         if isinstance(scene, trimesh.Scene):
-            # 如果是場景，合併所有網格並導出
+            # If it's a scene, merge all meshes and export
             mesh = trimesh.util.concatenate([
                 trimesh.Trimesh(vertices=g.vertices, faces=g.faces)
                 for g in scene.geometry.values()
             ])
             mesh.export(output_file, file_type='obj')
         else:
-            # 如果只是單個網格，直接導出
+            # If it's just a single mesh, export directly
             scene.export(output_file, file_type='obj')
         result = "success"
         msg = output_file
@@ -54,51 +56,52 @@ def convert_glb_to_obj(input_file, output_file=None):
 
     return result, msg
 
+
 def batch_convert_glb_to_obj(input_dir: str, output_dir: str, file_pattern: str = "*.glb") -> Dict:
     """
-    批量轉換目錄中的GLB文件為OBJ格式
+    Batch convert GLB files in directory to OBJ format
     
     Args:
-        input_dir: 輸入目錄路徑
-        output_dir: 輸出目錄路徑  
-        file_pattern: 文件匹配模式
+        input_dir: Input directory path
+        output_dir: Output directory path  
+        file_pattern: File matching pattern
         
     Returns:
-        轉換結果字典
+        Conversion result dictionary
     """
     input_path = Path(input_dir)
     output_path = Path(output_dir)
     
     if not input_path.exists():
-        logger.error(f"輸入目錄不存在: {input_dir}")
+        logger.error(f"Input directory does not exist: {input_dir}")
         return {'success': False, 'error': f'Input directory not found: {input_dir}'}
     
-    # 創建輸出目錄
+    # Create output directory
     output_path.mkdir(parents=True, exist_ok=True)
     
-    # 查找GLB文件
+    # Find GLB files
     glb_files = list(input_path.rglob(file_pattern))
     
     if not glb_files:
-        logger.warning(f"在 {input_dir} 中未找到匹配 {file_pattern} 的文件")
+        logger.warning(f"No files matching {file_pattern} found in {input_dir}")
         return {'success': True, 'converted_files': [], 'failed_files': []}
     
-    logger.info(f"找到 {len(glb_files)} 個GLB文件待轉換")
+    logger.info(f"Found {len(glb_files)} GLB files to convert")
     
     converted_files = []
     failed_files = []
     
     for glb_file in glb_files:
         try:
-            # 計算相對路徑以保持目錄結構
+            # Calculate relative path to maintain directory structure
             relative_path = glb_file.relative_to(input_path)
             obj_relative_path = relative_path.with_suffix('.obj')
             output_file = output_path / obj_relative_path
             
-            # 創建輸出子目錄
+            # Create output subdirectory
             output_file.parent.mkdir(parents=True, exist_ok=True)
             
-            logger.info(f"轉換: {relative_path} -> {obj_relative_path}")
+            logger.info(f"Converting: {relative_path} -> {obj_relative_path}")
             
             result, msg = convert_glb_to_obj(str(glb_file), str(output_file))
             
@@ -108,14 +111,14 @@ def batch_convert_glb_to_obj(input_dir: str, output_dir: str, file_pattern: str 
                     'output_file': str(output_file),
                     'relative_path': str(relative_path)
                 })
-                logger.info(f"✅ 轉換成功: {relative_path}")
+                logger.info(f"✅ Conversion successful: {relative_path}")
             else:
                 failed_files.append({
                     'input_file': str(glb_file),
                     'error': msg,
                     'relative_path': str(relative_path)
                 })
-                logger.error(f"❌ 轉換失敗: {relative_path} - {msg}")
+                logger.error(f"❌ Conversion failed: {relative_path} - {msg}")
                 
         except Exception as e:
             failed_files.append({
@@ -123,9 +126,9 @@ def batch_convert_glb_to_obj(input_dir: str, output_dir: str, file_pattern: str 
                 'error': str(e),
                 'relative_path': str(glb_file.relative_to(input_path))
             })
-            logger.error(f"❌ 處理失敗: {glb_file.relative_to(input_path)} - {e}")
+            logger.error(f"❌ Processing failed: {glb_file.relative_to(input_path)} - {e}")
     
-    # 保存轉換報告
+    # Save conversion report
     report = {
         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
         'input_directory': str(input_path),
@@ -141,8 +144,8 @@ def batch_convert_glb_to_obj(input_dir: str, output_dir: str, file_pattern: str 
     with open(report_file, 'w', encoding='utf-8') as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     
-    logger.info(f"轉換完成: 成功 {len(converted_files)} 個，失敗 {len(failed_files)} 個")
-    logger.info(f"轉換報告已保存: {report_file}")
+    logger.info(f"Conversion completed: {len(converted_files)} successful, {len(failed_files)} failed")
+    logger.info(f"Conversion report saved: {report_file}")
     
     return {
         'success': True,
@@ -152,53 +155,54 @@ def batch_convert_glb_to_obj(input_dir: str, output_dir: str, file_pattern: str 
         'report_file': str(report_file)
     }
 
+
 def process_chair_models(base_input_dir: str, base_output_dir: str) -> Dict:
     """
-    處理椅子模型目錄結構 (Chair/Chair_generation_X/)
+    Process chair model directory structure (Chair/Chair_generation_X/)
     
     Args:
-        base_input_dir: 包含椅子生成變體的基礎輸入目錄
-        base_output_dir: 基礎輸出目錄
+        base_input_dir: Base input directory containing chair generation variants
+        base_output_dir: Base output directory
         
     Returns:
-        處理結果字典
+        Processing result dictionary
     """
     base_input_path = Path(base_input_dir)
     base_output_path = Path(base_output_dir)
     
     if not base_input_path.exists():
-        logger.error(f"基礎輸入目錄不存在: {base_input_dir}")
+        logger.error(f"Base input directory does not exist: {base_input_dir}")
         return {'success': False, 'error': f'Base input directory not found: {base_input_dir}'}
     
-    # 查找Chair目錄
+    # Find Chair directory
     chair_main_dir = base_input_path / 'Chair'
     if not chair_main_dir.exists():
-        logger.error(f"Chair目錄不存在: {chair_main_dir}")
+        logger.error(f"Chair directory does not exist: {chair_main_dir}")
         return {'success': False, 'error': f'Chair directory not found: {chair_main_dir}'}
     
-    # 查找Chair_generation_X目錄
+    # Find Chair_generation_X directories
     generation_dirs = [d for d in chair_main_dir.iterdir() 
                       if d.is_dir() and d.name.startswith('Chair_generation_')]
     
     if not generation_dirs:
-        logger.warning(f"在 {chair_main_dir} 中未找到Chair_generation_*目錄")
+        logger.warning(f"No Chair_generation_* directories found in {chair_main_dir}")
         return {'success': True, 'generation_results': {}}
     
-    logger.info(f"找到 {len(generation_dirs)} 個椅子生成變體目錄")
+    logger.info(f"Found {len(generation_dirs)} chair generation variant directories")
     
     generation_results = {}
     
-    # 創建Chair輸出目錄
+    # Create Chair output directory
     chair_output_dir = base_output_path / 'Chair'
     chair_output_dir.mkdir(parents=True, exist_ok=True)
     
     for gen_dir in sorted(generation_dirs, key=lambda x: int(x.name.split('_')[-1]) if x.name.split('_')[-1].isdigit() else 0):
         gen_id = gen_dir.name
-        logger.info(f"處理生成變體: {gen_id}")
+        logger.info(f"Processing generation variant: {gen_id}")
         
         gen_output_dir = chair_output_dir / gen_id
         
-        # 轉換該生成變體目錄中的所有GLB文件
+        # Convert all GLB files in this generation variant directory
         gen_result = batch_convert_glb_to_obj(
             str(gen_dir), 
             str(gen_output_dir),
@@ -208,11 +212,11 @@ def process_chair_models(base_input_dir: str, base_output_dir: str) -> Dict:
         generation_results[gen_id] = gen_result
         
         if gen_result['success']:
-            logger.info(f"✅ {gen_id} 處理完成: 轉換了 {len(gen_result['converted_files'])} 個文件")
+            logger.info(f"✅ {gen_id} processing completed: converted {len(gen_result['converted_files'])} files")
         else:
-            logger.error(f"❌ {gen_id} 處理失敗: {gen_result.get('error', 'Unknown error')}")
+            logger.error(f"❌ {gen_id} processing failed: {gen_result.get('error', 'Unknown error')}")
     
-    # 生成總體報告
+    # Generate overall report
     total_converted = sum(len(result.get('converted_files', [])) for result in generation_results.values())
     total_failed = sum(len(result.get('failed_files', [])) for result in generation_results.values())
     
@@ -232,8 +236,8 @@ def process_chair_models(base_input_dir: str, base_output_dir: str) -> Dict:
     with open(overall_report_file, 'w', encoding='utf-8') as f:
         json.dump(overall_report, f, indent=2, ensure_ascii=False)
     
-    logger.info(f"總體轉換完成: 轉換了 {total_converted} 個文件，失敗 {total_failed} 個")
-    logger.info(f"總體報告已保存: {overall_report_file}")
+    logger.info(f"Overall conversion completed: converted {total_converted} files, failed {total_failed}")
+    logger.info(f"Overall report saved: {overall_report_file}")
     
     return {
         'success': True,
@@ -244,37 +248,39 @@ def process_chair_models(base_input_dir: str, base_output_dir: str) -> Dict:
         'report_file': str(overall_report_file)
     }
 
+
 def main():
-    """主函數 - 支持命令行調用和程序化調用"""
-    parser = argparse.ArgumentParser(description='GLB to OBJ 批量轉換工具')
+    """Main function - supports command line and programmatic calls"""
+    parser = argparse.ArgumentParser(description='GLB to OBJ batch conversion tool')
     parser.add_argument('--input_dir', type=str, default='./3d_models', 
-                       help='包含椅子GLB模型的輸入目錄')
+                       help='Input directory containing chair GLB models')
     parser.add_argument('--output_dir', type=str, default='./obj_models',
-                       help='OBJ文件輸出目錄')
+                       help='OBJ file output directory')
     parser.add_argument('--single_file', type=str, default=None,
-                       help='單個文件轉換模式')
+                       help='Single file conversion mode')
     parser.add_argument('--output_file', type=str, default=None,
-                       help='單個文件輸出路徑')
+                       help='Single file output path')
     
     args = parser.parse_args()
     
     if args.single_file:
-        # 單文件轉換模式
-        logger.info(f"單文件轉換模式: {args.single_file}")
+        # Single file conversion mode
+        logger.info(f"Single file conversion mode: {args.single_file}")
         result, msg = convert_glb_to_obj(args.single_file, args.output_file)
         if result == "success":
-            logger.info(f"✅ 轉換成功: {msg}")
+            logger.info(f"✅ Conversion successful: {msg}")
         else:
-            logger.error(f"❌ 轉換失敗: {msg}")
+            logger.error(f"❌ Conversion failed: {msg}")
     else:
-        # 批量轉換模式
-        logger.info(f"批量轉換模式: {args.input_dir} -> {args.output_dir}")
+        # Batch conversion mode
+        logger.info(f"Batch conversion mode: {args.input_dir} -> {args.output_dir}")
         result = process_chair_models(args.input_dir, args.output_dir)
         
         if result['success']:
-            logger.info("🎉 批量轉換完成！")
+            logger.info("🎉 Batch conversion completed!")
         else:
-            logger.error(f"❌ 批量轉換失敗: {result.get('error', 'Unknown error')}")
+            logger.error(f"❌ Batch conversion failed: {result.get('error', 'Unknown error')}")
+
 
 if __name__ == "__main__":
     main()

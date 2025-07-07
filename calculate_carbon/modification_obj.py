@@ -10,9 +10,11 @@ import logging
 from typing import Dict, List, Tuple, Optional
 import csv
 
+
 # 設置日誌
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
 
 class GeometryAnalyzer:
     def __init__(self):
@@ -36,6 +38,7 @@ class GeometryAnalyzer:
         
         return np.array(vertices), np.array(faces)
 
+
     def build_connectivity_graph(self, faces):
         """建立頂點之間的連通性圖"""
         graph = defaultdict(set)
@@ -48,6 +51,7 @@ class GeometryAnalyzer:
                 graph[v2].add(v1)
         
         return graph
+
 
     def find_connected_components(self, graph, num_vertices):
         """使用迭代 DFS 找到所有連通分量"""
@@ -69,6 +73,7 @@ class GeometryAnalyzer:
                 components.append(component)
         
         return components
+
 
     def analyze_edge_manifold(self, faces):
         """分析邊的流形性質"""
@@ -93,9 +98,11 @@ class GeometryAnalyzer:
             'is_manifold': len(non_manifold_edges) == 0
         }
 
+
     def calculate_euler_characteristic(self, num_vertices, num_faces, num_edges):
         """計算歐拉特徵數 (V - E + F)"""
         return num_vertices - num_edges + num_faces
+
 
     def analyze_face_quality(self, vertices, faces):
         """分析面片品質"""
@@ -133,6 +140,7 @@ class GeometryAnalyzer:
             'max_aspect_ratio': max(aspect_ratios) if aspect_ratios else 0
         }
 
+
     def find_isolated_vertices(self, vertices, faces):
         """找到孤立頂點"""
         used_vertices = set()
@@ -145,6 +153,7 @@ class GeometryAnalyzer:
                 isolated.append(i)
         
         return isolated
+
 
     def comprehensive_analysis(self, file_path):
         """對模型進行全面分析"""
@@ -220,6 +229,7 @@ class GeometryAnalyzer:
         
         return analysis_result, vertices, faces
 
+
     def filter_obj_with_analysis(self, input_path, output_path):
         """過濾 OBJ 檔案並進行對比分析"""
         # 分析原始模型
@@ -265,6 +275,7 @@ class GeometryAnalyzer:
         
         return original_analysis, processed_analysis, processing_impact
 
+
     def calculate_processing_impact(self, original, processed):
         """計算處理對模型的影響"""
         impact = {
@@ -291,6 +302,7 @@ class GeometryAnalyzer:
         }
         
         return impact
+
 
     def generate_analysis_report(self, results, output_dir):
         """生成分析報告"""
@@ -342,6 +354,7 @@ class GeometryAnalyzer:
         logger.info(f"分析報告已保存: {report_path}")
         logger.info(f"摘要報告已保存: {summary_path}")
 
+
     def create_visualization(self, results, output_dir):
         """創建可視化圖表"""
         # 設置英文字體
@@ -378,17 +391,23 @@ class GeometryAnalyzer:
         ax1.bar([i - width/2 for i in x], original_vertices, width, label='Original', alpha=0.8)
         ax1.bar([i + width/2 for i in x], processed_vertices, width, label='Processed', alpha=0.8)
         ax1.set_title('Vertex Count Comparison', fontsize=16)
+        ax1.set_xlabel('Models')
+        ax1.set_ylabel('Vertex Count')
         ax1.set_xticks(x)
         ax1.set_xticklabels(file_names, rotation=45)
         ax1.legend()
+        ax1.grid(True, alpha=0.3)
         
         # 連通分量對比
         ax2.bar([i - width/2 for i in x], original_components, width, label='Original', alpha=0.8)
         ax2.bar([i + width/2 for i in x], processed_components, width, label='Processed', alpha=0.8)
         ax2.set_title('Connected Components Comparison', fontsize=16)
+        ax2.set_xlabel('Models')
+        ax2.set_ylabel('Component Count')
         ax2.set_xticks(x)
         ax2.set_xticklabels(file_names, rotation=45)
         ax2.legend()
+        ax2.grid(True, alpha=0.3)
         
         # 削減率分析
         reduction_rates = []
@@ -397,15 +416,21 @@ class GeometryAnalyzer:
         
         ax3.bar(x, reduction_rates, alpha=0.8, color='orange')
         ax3.set_title('Vertex Reduction Rate (%)', fontsize=16)
+        ax3.set_xlabel('Models')
+        ax3.set_ylabel('Reduction Rate (%)')
         ax3.set_xticks(x)
         ax3.set_xticklabels(file_names, rotation=45)
+        ax3.grid(True, alpha=0.3)
         
         # 拓撲品質分析
         euler_chars = [r['original_analysis']['euler_characteristic'] for r in valid_results]
         ax4.bar(x, euler_chars, alpha=0.8, color='green')
         ax4.set_title('Euler Characteristic', fontsize=16)
+        ax4.set_xlabel('Models')
+        ax4.set_ylabel('Euler Characteristic')
         ax4.set_xticks(x)
         ax4.set_xticklabels(file_names, rotation=45)
+        ax4.grid(True, alpha=0.3)
         
         plt.tight_layout()
         
@@ -417,6 +442,7 @@ class GeometryAnalyzer:
         plt.close()
         
         logger.info(f"Analysis charts saved: {chart_path}")
+
 
     def batch_process_obj_files(self, input_dir: str, output_dir: str) -> Dict:
         """
@@ -495,6 +521,7 @@ class GeometryAnalyzer:
             'failed_files': failed_files,
             'analysis_results': analysis_results
         }
+
 
     def process_chair_models(self, base_input_dir: str, base_output_dir: str) -> Dict:
         """
@@ -614,6 +641,7 @@ class GeometryAnalyzer:
             'report_file': str(overall_report_file)
         }
 
+
 def main():
     """主函數 - 支持命令行參數"""
     parser = argparse.ArgumentParser(description='3D模型幾何分析和修改工具')
@@ -671,6 +699,7 @@ def main():
         logger.info("🎉 處理完成！")
     else:
         logger.error(f"❌ 處理失敗: {result.get('error', 'Unknown error')}")
+
 
 if __name__ == "__main__":
     main()

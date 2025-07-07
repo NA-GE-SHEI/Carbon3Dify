@@ -1,4 +1,3 @@
-# python enhanced_rf_analysis.py --data_file augmented_pro.csv --is_square 0 --is_round 1 --seat_area 707 --seat_thickness 3 --true_weight 4.2 --encoding utf-8
 import pandas as pd
 import numpy as np
 import os, time
@@ -29,7 +28,7 @@ def parse_args():
                         choices=['rf', 'xgb', 'mlr', 'svr', 'all'], 
                         help='模型類型: rf (隨機森林), xgb (XGBoost), mlr (多元線性迴歸), svr (支持向量迴歸), all (全部)')
     
-    parser.add_argument('--true_weight', type=float, default=4.2, help='椅子的真實重量 (kg)，如果不知道可以不設定')
+    parser.add_argument('--true_weight', type=float, default=None, help='椅子的真實重量 (kg)，如果不知道可以不設定')
     parser.add_argument('--is_square', type=int, default=0, help='是否為方形椅 (0=否, 1=是)')
     parser.add_argument('--is_round', type=int, default=1, help='是否為圓形椅 (0=否, 1=是)')
     parser.add_argument('--back_height', type=float, default=None, help='椅背高度 (cm), 可為None')
@@ -96,8 +95,8 @@ def setup_output_dir(base_dir):
 
 def prepare_data(file_path, encoding):
     """讀取和準備資料"""
-    # 設定中文字體顯示，避免亂碼警告
-    plt.rcParams['font.sans-serif'] = ['SimSun', 'Microsoft JhengHei', 'Arial Unicode MS']
+    # 設定英文字體顯示
+    plt.rcParams['font.family'] = 'DejaVu Sans'
     plt.rcParams['axes.unicode_minus'] = False
     
     # 讀取CSV檔案
@@ -143,26 +142,26 @@ def prepare_data(file_path, encoding):
     return df
 
 def format_feature_names_for_display(feature_names):
-    """格式化特徵名稱以正確顯示單位"""
+    """格式化特徵名稱以英文顯示"""
     formatted_names = []
     
     for name in feature_names:
         if '椅墊面積' in name:
-            formatted_names.append('椅墊面積(cm²)')
+            formatted_names.append('Seat Area (cm²)')
         elif '椅背體積' in name:
-            formatted_names.append('椅背體積(cm³)')
+            formatted_names.append('Backrest Volume (cm³)')
         elif '椅腳體積' in name:
-            formatted_names.append('椅腳體積(cm³)')
+            formatted_names.append('Leg Volume (cm³)')
         elif '椅背高度' in name:
-            formatted_names.append('椅背高度(cm)')
+            formatted_names.append('Backrest Height (cm)')
         elif '椅墊厚度' in name:
-            formatted_names.append('椅墊厚度(cm)')
+            formatted_names.append('Seat Thickness (cm)')
         elif '椅腳高度' in name:
-            formatted_names.append('椅腳高度(cm)')
+            formatted_names.append('Leg Height (cm)')
         elif '方形椅' in name:
-            formatted_names.append('方形椅')
+            formatted_names.append('Square Chair')
         elif '圓形椅' in name:
-            formatted_names.append('圓形椅')
+            formatted_names.append('Round Chair')
         else:
             # 如果是其他未識別的特徵，保持原名
             formatted_names.append(name)
@@ -248,7 +247,7 @@ def visualize_rf_feature_sensitivity(model, X, scaler, output_dir, args):
         importance = model.feature_importances_
         feature_names = X.columns
         
-        # 格式化特徵名稱以正確顯示單位
+        # 格式化特徵名稱以英文顯示
         formatted_feature_names = format_feature_names_for_display(feature_names)
         
         # 按重要性排序
@@ -265,9 +264,9 @@ def visualize_rf_feature_sensitivity(model, X, scaler, output_dir, args):
                       color=colors, alpha=0.8)
         ax1.set_xticks(range(len(sorted_importance)))
         ax1.set_xticklabels(sorted_feature_names, rotation=45, ha='right')
-        ax1.set_title('特徵重要性排序', fontsize=16)
-        ax1.set_xlabel('特徵', fontsize=14)
-        ax1.set_ylabel('重要性', fontsize=14)
+        ax1.set_title('Feature Importance Ranking', fontsize=16)
+        ax1.set_xlabel('Features', fontsize=14)
+        ax1.set_ylabel('Importance', fontsize=14)
         ax1.grid(True, alpha=0.3, axis='y')
         
         # 添加數值標籤
@@ -281,7 +280,7 @@ def visualize_rf_feature_sensitivity(model, X, scaler, output_dir, args):
         wedges, texts, autotexts = ax2.pie(sorted_importance, labels=sorted_feature_names, 
                                           colors=colors_pie, autopct='%1.1f%%', 
                                           startangle=90)
-        ax2.set_title('特徵重要性分佈', fontsize=16)
+        ax2.set_title('Feature Importance Distribution', fontsize=16)
         
         # 設置圓餅圖文字大小
         for autotext in autotexts:
@@ -327,18 +326,18 @@ def visualize_rf_learning_curve(X, y, output_dir, args):
         
         # 繪製訓練集學習曲線
         plt.plot(train_sizes_abs, train_rmse_mean, 'o-', color='blue', 
-                label='訓練集 RMSE', linewidth=2)
+                label='Training RMSE', linewidth=2)
         plt.fill_between(train_sizes_abs, train_rmse_mean - train_rmse_std,
                         train_rmse_mean + train_rmse_std, alpha=0.1, color='blue')
         
         # 繪製驗證集學習曲線
         plt.plot(train_sizes_abs, val_rmse_mean, 'o-', color='red', 
-                label='驗證集 RMSE', linewidth=2)
+                label='Validation RMSE', linewidth=2)
         plt.fill_between(train_sizes_abs, val_rmse_mean - val_rmse_std,
                         val_rmse_mean + val_rmse_std, alpha=0.1, color='red')
         
-        plt.title('隨機森林學習曲線', fontsize=16)
-        plt.xlabel('訓練樣本數量', fontsize=14)
+        plt.title('Random Forest Learning Curve', fontsize=16)
+        plt.xlabel('Training Sample Size', fontsize=14)
         plt.ylabel('RMSE', fontsize=14)
         plt.legend(fontsize=12)
         plt.grid(True, alpha=0.3)
@@ -346,7 +345,7 @@ def visualize_rf_learning_curve(X, y, output_dir, args):
         # 添加最佳點標記
         best_val_idx = np.argmin(val_rmse_mean)
         plt.scatter(train_sizes_abs[best_val_idx], val_rmse_mean[best_val_idx], 
-                   color='green', s=100, zorder=5, label=f'最佳點: {train_sizes_abs[best_val_idx]} 樣本')
+                   color='green', s=100, zorder=5, label=f'Best Point: {train_sizes_abs[best_val_idx]} samples')
         plt.legend(fontsize=12)
         
         plt.tight_layout()
@@ -374,37 +373,37 @@ def visualize_rf_residual_heatmap(y_test, y_pred, output_dir, args):
         # 1. 殘差 vs 預測值散點圖
         ax1.scatter(y_pred, residuals, alpha=0.6, color='steelblue')
         ax1.axhline(y=0, color='red', linestyle='--', linewidth=2)
-        ax1.set_xlabel('預測值', fontsize=12)
-        ax1.set_ylabel('殘差 (實際值 - 預測值)', fontsize=12)
-        ax1.set_title('殘差 vs 預測值', fontsize=14)
+        ax1.set_xlabel('Predicted Values', fontsize=12)
+        ax1.set_ylabel('Residuals (Actual - Predicted)', fontsize=12)
+        ax1.set_title('Residuals vs Predicted Values', fontsize=14)
         ax1.grid(True, alpha=0.3)
         
         # 2. 殘差直方圖
         ax2.hist(residuals, bins=20, color='lightblue', alpha=0.7, edgecolor='black')
         ax2.axvline(x=0, color='red', linestyle='--', linewidth=2)
-        ax2.set_xlabel('殘差', fontsize=12)
-        ax2.set_ylabel('頻率', fontsize=12)
-        ax2.set_title('殘差分佈直方圖', fontsize=14)
+        ax2.set_xlabel('Residuals', fontsize=12)
+        ax2.set_ylabel('Frequency', fontsize=12)
+        ax2.set_title('Residuals Distribution Histogram', fontsize=14)
         ax2.grid(True, alpha=0.3)
         
         # 3. Q-Q圖 (檢驗殘差正態性)
         stats.probplot(residuals, dist="norm", plot=ax3)
-        ax3.set_title('殘差正態性Q-Q圖', fontsize=14)
+        ax3.set_title('Residuals Normality Q-Q Plot', fontsize=14)
         ax3.grid(True, alpha=0.3)
         
         # 4. 實際值 vs 預測值 + 殘差顏色映射
         scatter = ax4.scatter(y_test, y_pred, c=np.abs(residuals), 
                             cmap='YlOrRd', alpha=0.7, s=50)
         ax4.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 
-                'k--', lw=2, label='完美預測線')
-        ax4.set_xlabel('實際值', fontsize=12)
-        ax4.set_ylabel('預測值', fontsize=12)
-        ax4.set_title('實際值 vs 預測值 (顏色表示殘差大小)', fontsize=14)
+                'k--', lw=2, label='Perfect Prediction Line')
+        ax4.set_xlabel('Actual Values', fontsize=12)
+        ax4.set_ylabel('Predicted Values', fontsize=12)
+        ax4.set_title('Actual vs Predicted Values (Color indicates residual magnitude)', fontsize=14)
         ax4.legend()
         ax4.grid(True, alpha=0.3)
         
         # 添加顏色條
-        plt.colorbar(scatter, ax=ax4, label='殘差絕對值')
+        plt.colorbar(scatter, ax=ax4, label='Absolute Residuals')
         
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, 'rf_residual_heatmap_analysis.png'), dpi=args.dpi)
@@ -418,7 +417,7 @@ def visualize_rf_multiple_trees(model, X, output_dir, args, n_trees=3):
     try:
         print(f"繪製隨機森林中的 {n_trees} 個決策樹...")
         
-        # 格式化特徵名稱以正確顯示單位
+        # 格式化特徵名稱以英文顯示
         formatted_feature_names = format_feature_names_for_display(X.columns)
         
         fig, axes = plt.subplots(1, n_trees, figsize=(25, 8))
@@ -430,9 +429,9 @@ def visualize_rf_multiple_trees(model, X, output_dir, args, n_trees=3):
                           rounded=True,
                           max_depth=3,
                           ax=axes[i])
-            axes[i].set_title(f'決策樹 {i+1}', fontsize=14)
+            axes[i].set_title(f'Decision Tree {i+1}', fontsize=14)
         
-        plt.suptitle('隨機森林中的決策樹示例', fontsize=16)
+        plt.suptitle('Decision Trees Examples in Random Forest', fontsize=16)
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, 'rf_multiple_decision_trees.png'), dpi=args.dpi)
         plt.close()
@@ -477,13 +476,13 @@ def visualize_rf_oob_error(X_train_scaled, y_train, output_dir, args):
         # 繪製圖表
         plt.figure(figsize=(12, 8))
         plt.plot(n_estimators_range, oob_errors, 'o-', color='red', 
-                label='袋外誤差 (OOB Error)', linewidth=2, markersize=6)
+                label='Out-of-Bag Error', linewidth=2, markersize=6)
         plt.plot(n_estimators_range, train_errors, 'o-', color='blue', 
-                label='訓練誤差', linewidth=2, markersize=6)
+                label='Training Error', linewidth=2, markersize=6)
         
-        plt.title('隨機森林袋外誤差 vs 樹的數量', fontsize=16)
-        plt.xlabel('樹的數量 (n_estimators)', fontsize=14)
-        plt.ylabel('誤差率 (1 - R²)', fontsize=14)
+        plt.title('Random Forest Out-of-Bag Error vs Number of Trees', fontsize=16)
+        plt.xlabel('Number of Trees (n_estimators)', fontsize=14)
+        plt.ylabel('Error Rate (1 - R²)', fontsize=14)
         plt.legend(fontsize=12)
         plt.grid(True, alpha=0.3)
         
@@ -491,7 +490,7 @@ def visualize_rf_oob_error(X_train_scaled, y_train, output_dir, args):
         min_oob_idx = np.argmin(oob_errors)
         plt.scatter(n_estimators_range[min_oob_idx], oob_errors[min_oob_idx], 
                    color='green', s=100, zorder=5)
-        plt.annotate(f'最佳樹數量: {n_estimators_range[min_oob_idx]}', 
+        plt.annotate(f'Optimal Trees: {n_estimators_range[min_oob_idx]}', 
                     xy=(n_estimators_range[min_oob_idx], oob_errors[min_oob_idx]),
                     xytext=(n_estimators_range[min_oob_idx]+20, oob_errors[min_oob_idx]+0.01),
                     fontsize=12, ha='left',
@@ -532,18 +531,18 @@ def visualize_rf_validation_curve(X, y, output_dir, args):
         
         # 繪製訓練分數
         plt.plot(param_range, train_rmse_mean, 'o-', color='blue', 
-                label='訓練集 RMSE', linewidth=2)
+                label='Training RMSE', linewidth=2)
         plt.fill_between(param_range, train_rmse_mean - train_rmse_std,
                         train_rmse_mean + train_rmse_std, alpha=0.1, color='blue')
         
         # 繪製驗證分數
         plt.plot(param_range, val_rmse_mean, 'o-', color='red', 
-                label='驗證集 RMSE', linewidth=2)
+                label='Validation RMSE', linewidth=2)
         plt.fill_between(param_range, val_rmse_mean - val_rmse_std,
                         val_rmse_mean + val_rmse_std, alpha=0.1, color='red')
         
-        plt.title('隨機森林驗證曲線 (max_depth)', fontsize=16)
-        plt.xlabel('最大深度 (max_depth)', fontsize=14)
+        plt.title('Random Forest Validation Curve (max_depth)', fontsize=16)
+        plt.xlabel('Maximum Depth (max_depth)', fontsize=14)
         plt.ylabel('RMSE', fontsize=14)
         plt.legend(fontsize=12)
         plt.grid(True, alpha=0.3)
@@ -552,7 +551,7 @@ def visualize_rf_validation_curve(X, y, output_dir, args):
         best_depth_idx = np.argmin(val_rmse_mean)
         plt.scatter(param_range[best_depth_idx], val_rmse_mean[best_depth_idx], 
                    color='green', s=100, zorder=5)
-        plt.annotate(f'最佳深度: {param_range[best_depth_idx]}', 
+        plt.annotate(f'Optimal Depth: {param_range[best_depth_idx]}', 
                     xy=(param_range[best_depth_idx], val_rmse_mean[best_depth_idx]),
                     xytext=(param_range[best_depth_idx]+2, val_rmse_mean[best_depth_idx]+0.1),
                     fontsize=12, ha='left',
@@ -742,7 +741,7 @@ def save_detailed_analysis_results(model, y_test, y_pred, best_n_estimators, bes
             else:
                 features = feature_names
             
-            # 格式化特徵名稱以正確顯示單位
+            # 格式化特徵名稱以英文顯示
             formatted_features = format_feature_names_for_display(features)
             
             feature_importance = list(zip(formatted_features, model.feature_importances_))
@@ -863,9 +862,6 @@ def save_detailed_analysis_results(model, y_test, y_pred, best_n_estimators, bes
             
     except Exception as e:
         print(f"保存詳細分析結果時發生錯誤: {e}")
-            
-    except Exception as e:
-        print(f"保存詳細分析結果時發生錯誤: {e}")
 
 def save_raw_data_for_analysis(y_test, y_pred, learning_curve_data, oob_data, validation_curve_data, 
                               predicted_weight, args, output_dir):
@@ -960,37 +956,8 @@ def save_enhanced_results(model, y_test, y_pred, best_n_estimators, best_max_dep
             f.write(f"RMSE: {rmse:.6f}\n")
             f.write(f"MAE: {mae:.6f}\n")
             f.write(f"袋外評分 (OOB Score): {model.oob_score_:.6f}\n")
-            f.write("\n")
-            
-            # 殘差統計
-            f.write("殘差統計：\n")
-            f.write(f"殘差平均值: {np.mean(residuals):.6f}\n")
-            f.write(f"殘差標準差: {np.std(residuals):.6f}\n")
-            f.write(f"殘差最小值: {np.min(residuals):.6f}\n")
-            f.write(f"殘差最大值: {np.max(residuals):.6f}\n")
-            f.write("\n")
-            
-            # 最佳超參數
-            f.write("模型優化結果：\n")
             f.write(f"最佳樹數量: {best_n_estimators}\n")
             f.write(f"最佳最大深度: {best_max_depth}\n")
-            f.write("\n")
-            
-            # 特徵重要性
-            f.write("特徵重要性排序：\n")
-            # 使用傳入的特徵名稱，兼容不同版本的scikit-learn
-            if hasattr(model, 'feature_names_in_'):
-                features = model.feature_names_in_
-            else:
-                features = feature_names
-            
-            # 格式化特徵名稱以正確顯示單位
-            formatted_features = format_feature_names_for_display(features)
-            
-            feature_importance = list(zip(formatted_features, model.feature_importances_))
-            feature_importance.sort(key=lambda x: x[1], reverse=True)
-            for i, (feature, importance) in enumerate(feature_importance, 1):
-                f.write(f"{i}. {feature}: {importance:.6f}\n")
             f.write("\n")
             
             # 新椅子預測結果
@@ -1002,24 +969,39 @@ def save_enhanced_results(model, y_test, y_pred, best_n_estimators, best_max_dep
                     error = abs(predicted_weight - args.true_weight)
                     relative_error = error / args.true_weight * 100
                     f.write(f"真實重量: {args.true_weight:.2f} kg\n")
-                    f.write(f"預測誤差: {error:.2f} kg ({relative_error:.2f}%)\n")
-                    
-                    # 預測準確度評級
-                    if relative_error <= 5:
-                        accuracy_grade = "優秀"
-                    elif relative_error <= 10:
-                        accuracy_grade = "良好"
-                    elif relative_error <= 15:
-                        accuracy_grade = "一般"
-                    else:
-                        accuracy_grade = "需改進"
-                    
-                    f.write(f"預測準確度評級: {accuracy_grade}\n")
+                    f.write(f"絕對誤差: {error:.2f} kg\n")
+                    f.write(f"相對誤差: {relative_error:.2f}%\n")
                 else:
                     f.write("真實重量: 未提供\n")
-                    f.write("預測誤差: 無法計算 (未提供真實重量)\n")
             else:
                 f.write("預測失敗\n")
+            f.write("\n")
+            
+            # 特徵重要性
+            f.write("特徵重要性排序：\n")
+            
+            # 使用傳入的特徵名稱，兼容不同版本的scikit-learn
+            if hasattr(model, 'feature_names_in_'):
+                features = model.feature_names_in_
+            else:
+                features = feature_names
+            
+            # 格式化特徵名稱以英文顯示
+            formatted_features = format_feature_names_for_display(features)
+            
+            feature_importance = list(zip(formatted_features, model.feature_importances_))
+            feature_importance.sort(key=lambda x: x[1], reverse=True)
+            
+            for i, (feature, importance) in enumerate(feature_importance, 1):
+                f.write(f"{i}. {feature}: {importance:.6f}\n")
+            f.write("\n")
+            
+            # 殘差統計
+            f.write("殘差統計：\n")
+            f.write(f"殘差平均值: {np.mean(residuals):.6f}\n")
+            f.write(f"殘差標準差: {np.std(residuals):.6f}\n")
+            f.write(f"殘差最小值: {np.min(residuals):.6f}\n")
+            f.write(f"殘差最大值: {np.max(residuals):.6f}\n")
             f.write("\n")
             
             # 椅子特徵參數
@@ -1036,135 +1018,285 @@ def save_enhanced_results(model, y_test, y_pred, best_n_estimators, best_max_dep
     except Exception as e:
         print(f"保存增強分析結果時發生錯誤: {e}")
 
+def train_and_evaluate_xgboost(X_train_scaled, y_train, X_test_scaled, y_test, args):
+    """訓練與評估XGBoost模型"""
+    print("\n訓練XGBoost模型...")
+    
+    # 建立XGBoost模型
+    xgb_model = xgb.XGBRegressor(
+        n_estimators=args.n_estimators,
+        max_depth=args.max_depth,
+        learning_rate=0.1,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=args.random_state
+    )
+    
+    # 訓練模型
+    xgb_model.fit(X_train_scaled, y_train)
+    
+    # 預測和評估
+    y_pred = xgb_model.predict(X_test_scaled)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    r2 = r2_score(y_test, y_pred)
+    mae = mean_absolute_error(y_test, y_pred)
+    
+    print(f"XGBoost模型評估:")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"R²: {r2:.4f}")
+    print(f"MAE: {mae:.4f}")
+    
+    return xgb_model, y_pred, rmse, r2, mae
+
+def train_and_evaluate_mlr(X_train_scaled, y_train, X_test_scaled, y_test, args):
+    """訓練與評估多元線性迴歸模型"""
+    print("\n訓練多元線性迴歸模型...")
+    
+    # 建立多元線性迴歸模型
+    mlr_model = LinearRegression()
+    
+    # 訓練模型
+    mlr_model.fit(X_train_scaled, y_train)
+    
+    # 預測和評估
+    y_pred = mlr_model.predict(X_test_scaled)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    r2 = r2_score(y_test, y_pred)
+    mae = mean_absolute_error(y_test, y_pred)
+    
+    print(f"多元線性迴歸模型評估:")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"R²: {r2:.4f}")
+    print(f"MAE: {mae:.4f}")
+    
+    return mlr_model, y_pred, rmse, r2, mae
+
+def train_and_evaluate_svr(X_train_scaled, y_train, X_test_scaled, y_test, args):
+    """訓練與評估支持向量迴歸模型"""
+    print("\n訓練支持向量迴歸模型...")
+    
+    # 建立SVR模型
+    svr_model = SVR(
+        kernel=args.svr_kernel,
+        C=args.svr_c,
+        epsilon=args.svr_epsilon
+    )
+    
+    # 訓練模型
+    svr_model.fit(X_train_scaled, y_train)
+    
+    # 預測和評估
+    y_pred = svr_model.predict(X_test_scaled)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    r2 = r2_score(y_test, y_pred)
+    mae = mean_absolute_error(y_test, y_pred)
+    
+    print(f"支持向量迴歸模型評估:")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"R²: {r2:.4f}")
+    print(f"MAE: {mae:.4f}")
+    
+    return svr_model, y_pred, rmse, r2, mae
+
+def visualize_model_comparison(models_results, output_dir, args):
+    """視覺化模型比較"""
+    try:
+        print("繪製模型比較圖...")
+        
+        # 提取模型名稱和評估指標
+        model_names = []
+        rmse_values = []
+        r2_values = []
+        mae_values = []
+        
+        for model_name, (model, y_pred, rmse, r2, mae) in models_results.items():
+            model_names.append(model_name)
+            rmse_values.append(rmse)
+            r2_values.append(r2)
+            mae_values.append(mae)
+        
+        # 創建子圖
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 6))
+        
+        # RMSE比較
+        bars1 = ax1.bar(model_names, rmse_values, color=['skyblue', 'lightcoral', 'lightgreen', 'gold'])
+        ax1.set_title('Model Comparison - RMSE', fontsize=14)
+        ax1.set_ylabel('RMSE', fontsize=12)
+        ax1.tick_params(axis='x', rotation=45)
+        for bar in bars1:
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width()/2., height + 0.01,
+                    f'{height:.3f}', ha='center', va='bottom', fontsize=10)
+        
+        # R²比較
+        bars2 = ax2.bar(model_names, r2_values, color=['skyblue', 'lightcoral', 'lightgreen', 'gold'])
+        ax2.set_title('Model Comparison - R²', fontsize=14)
+        ax2.set_ylabel('R²', fontsize=12)
+        ax2.tick_params(axis='x', rotation=45)
+        for bar in bars2:
+            height = bar.get_height()
+            ax2.text(bar.get_x() + bar.get_width()/2., height + 0.01,
+                    f'{height:.3f}', ha='center', va='bottom', fontsize=10)
+        
+        # MAE比較
+        bars3 = ax3.bar(model_names, mae_values, color=['skyblue', 'lightcoral', 'lightgreen', 'gold'])
+        ax3.set_title('Model Comparison - MAE', fontsize=14)
+        ax3.set_ylabel('MAE', fontsize=12)
+        ax3.tick_params(axis='x', rotation=45)
+        for bar in bars3:
+            height = bar.get_height()
+            ax3.text(bar.get_x() + bar.get_width()/2., height + 0.01,
+                    f'{height:.3f}', ha='center', va='bottom', fontsize=10)
+        
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, 'model_comparison.png'), dpi=args.dpi)
+        plt.close()
+        
+    except Exception as e:
+        print(f"繪製模型比較圖時發生錯誤: {e}")
+
+def predict_new_chair_weight(model, new_chair_data, scaler, imputer):
+    """預測新椅子重量"""
+    try:
+        # 使用與訓練時相同的缺失值處理
+        new_chair_imputed = imputer.transform(new_chair_data)
+        
+        # 標準化特徵
+        new_chair_scaled = scaler.transform(new_chair_imputed)
+        
+        # 預測
+        predicted_weight = model.predict(new_chair_scaled)[0]
+        
+        return predicted_weight
+        
+    except Exception as e:
+        print(f"預測新椅子重量時發生錯誤: {e}")
+        return None
+
 def main():
     """主函數"""
     # 解析命令行參數
     args = parse_args()
     
-    # 建立輸出目錄
+    print("椅子重量預測與分析工具 - 增強版隨機森林分析")
+    print("=" * 60)
+    print(f"資料文件: {args.data_file}")
+    print(f"編碼格式: {args.encoding}")
+    print(f"模型類型: {args.model_type}")
+    print(f"隨機種子: {args.random_state}")
+    print("=" * 60)
+    
+    # 設定輸出目錄
     output_dir = setup_output_dir(args.output_dir)
     
-    # 讀取和準備資料
-    df = prepare_data(args.data_file, args.encoding)
-    
-    # 資料預處理與分割
-    X, y, X_train, X_test, y_train, y_test, X_train_scaled, X_test_scaled, imputer, scaler = preprocess_data(df, args.test_size, args.random_state)
-    
-    # 檢查資料是否正確處理
-    if X is None or y is None:
-        print("錯誤: 資料預處理失敗")
-        return None
-    
-    print(f"\n開始增強版隨機森林分析...")
-    
-    # 1. 訓練基本隨機森林模型
-    rf_model, rf_y_pred, rf_rmse, rf_r2, rf_mae = train_and_evaluate_rf_enhanced(
-        X_train_scaled, y_train, X_test_scaled, y_test, X, args)
-    
-    # 2. 特徵敏感度分析 (特徵重要性圖)
-    visualize_rf_feature_sensitivity(rf_model, X, scaler, output_dir, args)
-    
-    # 3. 學習曲線圖
-    learning_curve_data = visualize_rf_learning_curve(X, y, output_dir, args)
-    
-    # 4. 殘差分析熱圖 (替代混淆矩陣，因為這是回歸問題)
-    visualize_rf_residual_heatmap(y_test, rf_y_pred, output_dir, args)
-    
-    # 5. 多個決策樹視覺化
-    visualize_rf_multiple_trees(rf_model, X, output_dir, args, n_trees=3)
-    
-    # 6. 袋外誤差圖
-    best_n_estimators, oob_data = visualize_rf_oob_error(X_train_scaled, y_train, output_dir, args)
-    
-    # 7. 驗證曲線 (超參數調優)
-    best_max_depth, validation_curve_data = visualize_rf_validation_curve(X, y, output_dir, args)
-    
-    # 8. 使用最佳參數重新訓練模型
-    print(f"\n使用最佳參數重新訓練模型...")
-    print(f"最佳樹數量: {best_n_estimators}")
-    print(f"最佳最大深度: {best_max_depth}")
-    
-    optimized_rf_model = RandomForestRegressor(
-        n_estimators=best_n_estimators,
-        max_depth=best_max_depth,
-        min_samples_split=5,
-        min_samples_leaf=2,
-        max_features='sqrt',
-        random_state=args.random_state,
-        oob_score=True
-    )
-    
-    optimized_rf_model.fit(X_train_scaled, y_train)
-    optimized_y_pred = optimized_rf_model.predict(X_test_scaled)
-    optimized_rmse = np.sqrt(mean_squared_error(y_test, optimized_y_pred))
-    optimized_r2 = r2_score(y_test, optimized_y_pred)
-    
-    print(f"優化後模型評估:")
-    print(f"RMSE: {optimized_rmse:.4f}")
-    print(f"R²: {optimized_r2:.4f}")
-    print(f"袋外評分: {optimized_rf_model.oob_score_:.4f}")
-    
-    # 9. 新椅子預測
     try:
-        new_chair = create_new_chair_data(args)
+        # 讀取和準備資料
+        print("讀取資料...")
+        df = prepare_data(args.data_file, args.encoding)
         
-        # 檢查欄位名稱是否一致
-        for col in X.columns:
-            if col not in new_chair.columns:
-                print(f"警告: 新椅子資料中缺少欄位 '{col}'")
-                new_chair[col] = 0
+        # 資料預處理
+        print("資料預處理...")
+        preprocessing_result = preprocess_data(df, args.test_size, args.random_state)
         
-        # 確保欄位順序一致
-        new_chair = new_chair[X.columns]
+        if preprocessing_result[0] is None:
+            print("資料預處理失敗，程式結束")
+            return
         
-        # 處理缺失值並標準化
-        new_chair_imputed = imputer.transform(new_chair)
-        new_chair = pd.DataFrame(new_chair_imputed, columns=X.columns)
-        new_chair_scaled = scaler.transform(new_chair)
+        X, y, X_train, X_test, y_train, y_test, X_train_scaled, X_test_scaled, imputer, scaler = preprocessing_result
         
-        # 預測
-        predicted_weight = optimized_rf_model.predict(new_chair_scaled)[0]
-        print(f"\n新椅子的預測重量: {predicted_weight:.2f} kg")
+        # 儲存模型結果
+        models_results = {}
         
-        if args.true_weight is not None:
-            error = abs(predicted_weight - args.true_weight)
-            relative_error = error / args.true_weight * 100
-            print(f"預測誤差: {error:.2f} kg ({relative_error:.2f}%)")
+        # 訓練和評估模型
+        if args.model_type in ['rf', 'all']:
+            # 隨機森林模型
+            rf_model, rf_y_pred, rf_rmse, rf_r2, rf_mae = train_and_evaluate_rf_enhanced(
+                X_train_scaled, y_train, X_test_scaled, y_test, X, args)
+            models_results['Random Forest'] = (rf_model, rf_y_pred, rf_rmse, rf_r2, rf_mae)
+            
+            # 隨機森林特徵敏感度分析
+            visualize_rf_feature_sensitivity(rf_model, X, scaler, output_dir, args)
+            
+            # 學習曲線
+            learning_curve_data = visualize_rf_learning_curve(X, y, output_dir, args)
+            
+            # 殘差分析
+            visualize_rf_residual_heatmap(y_test, rf_y_pred, output_dir, args)
+            
+            # 多個決策樹視覺化
+            visualize_rf_multiple_trees(rf_model, X, output_dir, args)
+            
+            # 袋外誤差分析
+            best_n_estimators, oob_data = visualize_rf_oob_error(X_train_scaled, y_train, output_dir, args)
+            
+            # 驗證曲線
+            best_max_depth, validation_curve_data = visualize_rf_validation_curve(X, y, output_dir, args)
+            
+            # 預測新椅子重量
+            new_chair_data = create_new_chair_data(args)
+            predicted_weight = predict_new_chair_weight(rf_model, new_chair_data, scaler, imputer)
+            
+            if predicted_weight is not None:
+                print(f"\n新椅子預測重量: {predicted_weight:.2f} kg")
+                if args.true_weight is not None:
+                    error = abs(predicted_weight - args.true_weight)
+                    relative_error = error / args.true_weight * 100
+                    print(f"真實重量: {args.true_weight:.2f} kg")
+                    print(f"絕對誤差: {error:.2f} kg")
+                    print(f"相對誤差: {relative_error:.2f}%")
+            
+            # 保存詳細分析結果
+            save_detailed_analysis_results(rf_model, y_test, rf_y_pred, best_n_estimators, best_max_depth, 
+                                         X.columns, learning_curve_data, oob_data, validation_curve_data, 
+                                         predicted_weight, args, output_dir)
+            
+            # 保存原始數據
+            save_raw_data_for_analysis(y_test, rf_y_pred, learning_curve_data, oob_data, validation_curve_data, 
+                                     predicted_weight, args, output_dir)
+            
+            # 保存簡化結果
+            save_enhanced_results(rf_model, y_test, rf_y_pred, best_n_estimators, best_max_depth, 
+                                X.columns, predicted_weight, args, output_dir)
+        
+        if args.model_type in ['xgb', 'all']:
+            # XGBoost模型
+            xgb_model, xgb_y_pred, xgb_rmse, xgb_r2, xgb_mae = train_and_evaluate_xgboost(
+                X_train_scaled, y_train, X_test_scaled, y_test, args)
+            models_results['XGBoost'] = (xgb_model, xgb_y_pred, xgb_rmse, xgb_r2, xgb_mae)
+        
+        if args.model_type in ['mlr', 'all']:
+            # 多元線性迴歸模型
+            mlr_model, mlr_y_pred, mlr_rmse, mlr_r2, mlr_mae = train_and_evaluate_mlr(
+                X_train_scaled, y_train, X_test_scaled, y_test, args)
+            models_results['Multiple Linear Regression'] = (mlr_model, mlr_y_pred, mlr_rmse, mlr_r2, mlr_mae)
+        
+        if args.model_type in ['svr', 'all']:
+            # 支持向量迴歸模型
+            svr_model, svr_y_pred, svr_rmse, svr_r2, svr_mae = train_and_evaluate_svr(
+                X_train_scaled, y_train, X_test_scaled, y_test, args)
+            models_results['Support Vector Regression'] = (svr_model, svr_y_pred, svr_rmse, svr_r2, svr_mae)
+        
+        # 如果訓練了多個模型，進行比較
+        if len(models_results) > 1:
+            visualize_model_comparison(models_results, output_dir, args)
+        
+        print(f"\n分析完成！結果已保存到: {output_dir}")
+        print("生成的文件包括:")
+        print("- 特徵敏感度分析圖")
+        print("- 學習曲線圖")
+        print("- 殘差分析圖")
+        print("- 決策樹視覺化圖")
+        print("- 袋外誤差分析圖")
+        print("- 驗證曲線圖")
+        print("- 詳細分析結果文件")
+        print("- 原始數據CSV文件")
+        if len(models_results) > 1:
+            print("- 模型比較圖")
         
     except Exception as e:
-        print(f"預測新椅子重量時發生錯誤: {e}")
-        predicted_weight = None
-    
-    # 10. 保存結果
-    save_enhanced_results(optimized_rf_model, y_test, optimized_y_pred, 
-                         best_n_estimators, best_max_depth, X.columns, 
-                         predicted_weight, args, output_dir)
-    
-    # 11. 保存詳細分析結果
-    save_detailed_analysis_results(optimized_rf_model, y_test, optimized_y_pred, 
-                                  best_n_estimators, best_max_depth, X.columns,
-                                  learning_curve_data, oob_data, validation_curve_data, 
-                                  predicted_weight, args, output_dir)
-    
-    # 12. 保存原始數據供進一步分析
-    save_raw_data_for_analysis(y_test, optimized_y_pred, learning_curve_data, 
-                              oob_data, validation_curve_data, predicted_weight, args, output_dir)
-    
-    # 13. 保存模型
-    try:
-        import pickle
-        with open(os.path.join(output_dir, 'optimized_rf_model.pkl'), 'wb') as f:
-            pickle.dump(optimized_rf_model, f)
-        with open(os.path.join(output_dir, 'scaler.pkl'), 'wb') as f:
-            pickle.dump(scaler, f)
-        with open(os.path.join(output_dir, 'imputer.pkl'), 'wb') as f:
-            pickle.dump(imputer, f)
-    except Exception as e:
-        print(f"保存模型時發生錯誤: {e}")
-    
-    print(f"\n增強版隨機森林分析完成！所有結果已保存到: {output_dir}")
-    
-    return predicted_weight
+        print(f"程式執行時發生錯誤: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
