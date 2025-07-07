@@ -1,0 +1,8 @@
+# remove model 
+*.pth
+*.pt
+
+# remove generation & anlysis dir
+./3d_models
+./image_identify
+./material_analysis
