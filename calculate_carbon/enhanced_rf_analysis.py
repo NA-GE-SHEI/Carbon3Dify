@@ -21,8 +21,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='椅子重量預測與分析工具 - 增強版隨機森林分析')
     
     # 主要參數
-    parser.add_argument('--data_file', type=str, default='chair_data_V1.csv', help='資料檔案路徑')
-    parser.add_argument('--encoding', type=str, default='big5', help='CSV檔案編碼')
+    parser.add_argument('--data_file', type=str, default='chair_raw_data_v2_idmatched_revised_cleaned_aug_v2.csv', help='資料檔案路徑')
+    parser.add_argument('--encoding', type=str, default='utf-8', help='CSV檔案編碼')
     parser.add_argument('--output_dir', type=str, default='./enhanced_rf_result', help='輸出目錄')
     parser.add_argument('--model_type', type=str, default='all', 
                         choices=['rf', 'xgb', 'mlr', 'svr', 'all'], 

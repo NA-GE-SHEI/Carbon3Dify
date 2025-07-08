@@ -158,7 +158,7 @@ def create_workflow_config():
             "is_round": 1,
             "seat_area": 707,
             "seat_thickness": 3,
-            "true_weight": 4.2
+            "true_weight": 7.2
         },
         "enabled_steps": [1, 2, 3, 4, 5]  # 執行所有步驟
     }
@@ -235,7 +235,7 @@ def main():
         time.sleep(10)
         
         # 檢查3D模型是否生成完成
-        models_ready = wait_and_check_trellis_completion(max_wait_time=600, check_interval=30)  # 等待最多10分鐘
+        models_ready = wait_and_check_trellis_completion(max_wait_time=600, check_interval=5)  # 等待最多10分鐘
         
         if models_ready:
             logger.info("🔄 開始執行3D模型處理與分析工作流程...")

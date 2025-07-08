@@ -43,7 +43,7 @@ def parse_args():
     # xg&rf&mlr&svr_analysis.py parameters
     parser.add_argument('--data_file', type=str, default='chair_raw_data_v1.5.csv', 
                         help='Data file path (passed to analysis script)')
-    parser.add_argument('--encoding', type=str, default='big5', 
+    parser.add_argument('--encoding', type=str, default='utf-8', 
                         help='CSV file encoding (passed to analysis script)')
     parser.add_argument('--model_type', type=str, default='all', 
                         choices=['rf', 'xgb', 'mlr', 'svr', 'all'], 

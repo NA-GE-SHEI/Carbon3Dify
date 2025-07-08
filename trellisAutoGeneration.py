@@ -702,7 +702,7 @@ def main():
     config = {
         "identify_pass_dir": "./image_identify/identify_pass",  # 成功檢測圖片的路徑
         "output_dir": "3d_models",  # 3D模型輸出目錄
-        "generations_per_chair": 2,  # 每個椅子生成的變體數量
+        "generations_per_chair": 1,  # 每個椅子生成的變體數量
         "model_name": "JeffreyXiang/TRELLIS-image-large",
         
         # 🎯 椅子篩選（可選）

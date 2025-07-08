@@ -1,19 +1,10 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-椅子3D模型處理與分析完整工作流程整合腳本
-執行順序：model2obj.py -> modification_obj.py -> objFunction.py -> bootstrapV2.py -> enhanced_rf_analysis.py
-
-作者：AI Assistant
-創建時間：2025-01-07
-"""
-
 import os
 import sys
 import time
 import logging
 import json
 import argparse
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -235,10 +226,66 @@ class WorkflowIntegration:
             logger.error(f"❌ 步驟3執行異常: {e}")
             return {'success': False, 'error': str(e)}
     
+    # def step_4_bootstrap_analysis(self) -> Dict:
+    #     """步驟4: Bootstrap統計分析"""
+    #     logger.info("=" * 80)
+    #     logger.info("🔄 步驟4: Bootstrap統計分析")
+    #     logger.info("=" * 80)
+        
+    #     step_start_time = time.time()
+        
+    #     try:
+    #         # 檢查CSV數據文件
+    #         csv_file = self.config['input_dirs']['csv_data']
+    #         print(csv_file)
+    #         logger.info(csv_file)
+    #         if not Path(csv_file).exists():
+    #             logger.error(f"CSV數據文件不存在: {csv_file}")
+    #             return {'success': False, 'error': f'CSV file not found: {csv_file}'}
+            
+    #         # 導入並執行Bootstrap分析
+    #         from calculate_carbon.bootstrapV2 import main as bootstrap_main
+            
+    #         # 保存原始argv並設置新的
+    #         import sys
+    #         original_argv = sys.argv.copy()
+            
+    #         try:
+    #             # 設置模擬的命令行參數
+    #             bootstrap_config = self.config['bootstrap']
+    #             analysis_config = self.config['analysis']
+                
+    #             sys.argv = [
+    #                 './calculate_carbon/bootstrapV2.py',
+    #                 '--py_path', 'calculate_carbon/enhanced_rf_analysis.py',
+    #                 '--data_file', csv_file,
+    #                 '--n_iterations', str(bootstrap_config['n_iterations']),
+    #                 '--result_dir', './enhanced_rf_result',
+    #                 '--output_dir', self.config['output_dirs']['bootstrap_analysis'],
+    #                 '--model_type', analysis_config['model_type'],
+    #                 '--min_num', '10',
+    #                 '--ci_level', str(bootstrap_config['ci_level'])
+    #             ]
+                
+    #             # 直接調用main函數
+    #             bootstrap_main()
+                
+    #             step_time = time.time() - step_start_time
+    #             self.timing_records['step_4'] = step_time
+                
+    #             logger.info(f"✅ 步驟4完成: Bootstrap分析 (耗時: {step_time:.2f}秒)")
+    #             return {'success': True, 'output_dir': self.config['output_dirs']['bootstrap_analysis']}
+                
+    #         finally:
+    #             # 恢復原始argv
+    #             sys.argv = original_argv
+    #     except Exception as e:
+    #         logger.error(f"❌ 步驟4執行異常: {e}")
+    #         return {'success': False, 'error': str(e)}
     def step_4_bootstrap_analysis(self) -> Dict:
-        """步驟4: Bootstrap統計分析"""
+        """步驟4: 優化的Bootstrap統計分析"""
         logger.info("=" * 80)
-        logger.info("🔄 步驟4: Bootstrap統計分析")
+        logger.info("🔄 步驟4: 優化的Bootstrap統計分析")
         logger.info("=" * 80)
         
         step_start_time = time.time()
@@ -250,65 +297,205 @@ class WorkflowIntegration:
                 logger.error(f"CSV數據文件不存在: {csv_file}")
                 return {'success': False, 'error': f'CSV file not found: {csv_file}'}
             
-            # 準備Bootstrap參數（只傳遞Bootstrap腳本認識的參數）
+            # 準備參數
             bootstrap_config = self.config['bootstrap']
             analysis_config = self.config['analysis']
+            chair_config = self.config['chair_params']
+            n_iterations = bootstrap_config['n_iterations']
             
-            # 構建命令參數 - 只包含bootstrap腳本支援的參數
-            bootstrap_args = {
-                'n_iterations': bootstrap_config['n_iterations'],
-                'ci_level': bootstrap_config['ci_level'],
+            # 優化1: 預先載入數據，避免重複I/O
+            logger.info("📊 預先載入數據到記憶體...")
+            try:
+                import pandas as pd
+                data = pd.read_csv(csv_file, encoding='utf-8')
+                logger.info(f"✅ 成功載入數據: {len(data)} 行")
+            except Exception as e:
+                logger.warning(f"⚠️ 使用utf-8編碼載入失敗，嘗試utf-8: {e}")
+                try:
+                    data = pd.read_csv(csv_file, encoding='utf-8')
+                    logger.info(f"✅ 成功載入數據 (utf-8): {len(data)} 行")
+                except Exception as e2:
+                    logger.error(f"❌ 載入數據失敗: {e2}")
+                    return {'success': False, 'error': f'Failed to load data: {e2}'}
+            
+            # 準備分析參數
+            analysis_args = {
                 'data_file': csv_file,
                 'output_dir': self.config['output_dirs']['bootstrap_analysis'],
                 'model_type': analysis_config['model_type'],
-                'encoding': 'utf-8'  # 使用UTF-8編碼
+                'is_square': chair_config['is_square'],
+                'is_round': chair_config['is_round'],
+                'seat_area': chair_config['seat_area'],
+                'seat_thickness': chair_config['seat_thickness'],
+                'true_weight': chair_config['true_weight'],
+                'encoding': 'utf-8'  # 保持原有編碼設置
             }
             
-            # 模擬命令行參數
-            import sys
-            original_argv = sys.argv.copy()
+            # 優化2: 根據迭代次數選擇最佳執行策略
+            import multiprocessing as mp
+            from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
             
-            try:
-                # 設置模擬的命令行參數 - 只包含bootstrap腳本認識的參數
-                sys.argv = ['bootstrapV2_enhanced.py']
-                for key, value in bootstrap_args.items():
-                    if isinstance(value, bool):
-                        if value:
-                            sys.argv.append(f'--{key}')
-                    else:
-                        sys.argv.extend([f'--{key}', str(value)])
-                
-                logger.info(f"Bootstrap命令行參數: {' '.join(sys.argv[1:])}")
-                
-                # 導入並執行Bootstrap分析
-                try:
-                    from calculate_carbon.bootstrapV2 import main as bootstrap_main
-                    bootstrap_main()
-                except ImportError:
-                    # 如果導入失敗，嘗試直接調用
-                    logger.warning("無法導入bootstrap模組，嘗試直接執行")
-                    import subprocess
-                    cmd = [sys.executable, 'calculate_carbon/bootstrapV2.py'] + sys.argv[1:]
-                    result = subprocess.run(cmd, capture_output=True, text=True)
-                    if result.returncode != 0:
-                        raise Exception(f"Bootstrap執行失敗: {result.stderr}")
-                
-                step_time = time.time() - step_start_time
-                self.timing_records['step_4'] = step_time
-                
-                logger.info(f"✅ 步驟4完成: Bootstrap分析 (耗時: {step_time:.2f}秒)")
-                return {'success': True, 'output_dir': self.config['output_dirs']['bootstrap_analysis']}
-                
-            finally:
-                # 恢復原始argv
-                sys.argv = original_argv
-                
+            cpu_count = mp.cpu_count()
+            n_workers = max(1, min(cpu_count - 1, n_iterations // 4))  # 動態調整工作進程數
+            
+            logger.info(f"🚀 執行 {n_iterations} 次Bootstrap迭代")
+            logger.info(f"💻 使用 {n_workers} 個並行工作進程 (總CPU核心: {cpu_count})")
+            
+            if n_iterations >= 30 and n_workers > 1:
+                # 並行執行 (適用於大量迭代)
+                results = self._run_parallel_bootstrap(analysis_args, n_iterations, n_workers)
+            else:
+                # 優化的順序執行 (適用於少量迭代)
+                results = self._run_optimized_sequential_bootstrap(analysis_args, n_iterations)
+            
+            if not results:
+                logger.error("❌ Bootstrap分析執行失敗")
+                return {'success': False, 'error': 'Bootstrap analysis failed'}
+            
+            logger.info(f"✅ Bootstrap執行完成，成功 {len(results)} 次迭代")
+            
+            # 記錄執行時間
+            step_time = time.time() - step_start_time
+            self.timing_records['step_4'] = step_time
+            
+            logger.info(f"✅ 步驟4完成: Bootstrap分析 (耗時: {step_time:.2f}秒)")
+            logger.info(f"📊 平均每次迭代: {step_time/n_iterations:.2f}秒")
+            
+            return {
+                'success': True, 
+                'output_dir': self.config['output_dirs']['bootstrap_analysis'],
+                'iterations_completed': len(results),
+                'total_time': step_time
+            }
+                    
         except Exception as e:
             logger.error(f"❌ 步驟4執行異常: {e}")
             return {'success': False, 'error': str(e)}
 
+    def _run_parallel_bootstrap(self, analysis_args: Dict, n_iterations: int, n_workers: int) -> List:
+        """並行執行Bootstrap分析"""
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+        import subprocess
+        
+        logger.info(f"🔄 使用 {n_workers} 個進程並行執行...")
+        
+        # 準備所有任務
+        tasks = []
+        for i in range(n_iterations):
+            task_args = analysis_args.copy()
+            # 為每次迭代生成不同的隨機種子
+            task_args['random_state'] = int(time.time()) % 10000 + i
+            tasks.append((task_args, i))
+        
+        successful_runs = []
+        
+        # 使用進程池執行
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            # 提交所有任務
+            future_to_iteration = {
+                executor.submit(self._run_single_iteration, task_args, iteration): iteration 
+                for task_args, iteration in tasks
+            }
+            
+            completed = 0
+            for future in as_completed(future_to_iteration):
+                iteration = future_to_iteration[future]
+                try:
+                    success = future.result()
+                    if success:
+                        successful_runs.append(iteration)
+                    completed += 1
+                    
+                    # 進度報告
+                    if completed % max(1, n_iterations // 10) == 0 or completed == n_iterations:
+                        success_rate = len(successful_runs) / completed * 100
+                        logger.info(f"📊 進度: {completed}/{n_iterations} ({completed/n_iterations*100:.1f}%) | 成功率: {success_rate:.1f}%")
+                        
+                except Exception as e:
+                    logger.warning(f"⚠️ 迭代 {iteration} 執行失敗: {e}")
+                    completed += 1
+        
+        return successful_runs
+
+    def _run_optimized_sequential_bootstrap(self, analysis_args: Dict, n_iterations: int) -> List:
+        """優化的順序執行Bootstrap分析"""
+        logger.info(f"🔄 順序執行 {n_iterations} 次迭代 (已優化)...")
+        
+        successful_runs = []
+        
+        for i in range(n_iterations):
+            try:
+                task_args = analysis_args.copy()
+                task_args['random_state'] = int(time.time()) % 10000 + i
+                
+                success = self._run_single_iteration(task_args, i)
+                if success:
+                    successful_runs.append(i)
+                
+                # 進度報告
+                if (i + 1) % max(1, n_iterations // 10) == 0 or (i + 1) == n_iterations:
+                    success_rate = len(successful_runs) / (i + 1) * 100
+                    logger.info(f"📊 進度: {i + 1}/{n_iterations} ({(i + 1)/n_iterations*100:.1f}%) | 成功率: {success_rate:.1f}%")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ 迭代 {i} 執行失敗: {e}")
+        
+        return successful_runs
+
+    def _run_single_iteration(self, args: Dict, iteration: int) -> bool:
+        """執行單次Bootstrap迭代（優化版本）"""
+        import subprocess
+        import sys
+        
+        try:
+            # 構建命令參數 - 保持與原版兼容
+            cmd = [
+                'python3.10', 'calculate_carbon/bootstrapV2.py',
+                '--data_file', args['data_file'],
+                '--encoding', args['encoding'],
+                '--model_type', 'rf',
+                # '--model_type', args['model_type'],
+                '--output_dir', args['output_dir'],
+                # '--random_state', str(args['random_state']),
+                '--n_iterations', '1',  # 每次只執行一個迭代
+                '--min_num', str(iteration)  # 使用迭代次數作為結果文件夾編號
+            ]
+            
+            # # 添加椅子參數
+            # if 'is_square' in args:
+            #     cmd.extend(['--is_square', str(args['is_square'])])
+            # if 'is_round' in args:
+            #     cmd.extend(['--is_round', str(args['is_round'])])
+            # if 'seat_area' in args:
+            #     cmd.extend(['--seat_area', str(args['seat_area'])])
+            # if 'seat_thickness' in args:
+            #     cmd.extend(['--seat_thickness', str(args['seat_thickness'])])
+            # if 'true_weight' in args:
+            #     cmd.extend(['--true_weight', str(args['true_weight'])])
+            
+            # 執行命令，設置超時避免卡死
+            result = subprocess.run(
+                cmd, 
+                check=True, 
+                capture_output=True, 
+                text=True,
+                timeout=300  # 5分鐘超時
+            )
+            
+            return True
+            
+        except subprocess.TimeoutExpired:
+            logger.warning(f"⚠️ 迭代 {iteration} 超時 (5分鐘)")
+            return False
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"⚠️ 迭代 {iteration} 命令執行失敗: {e}")
+            return False
+        except Exception as e:
+            logger.warning(f"⚠️ 迭代 {iteration} 執行異常: {e}")
+            return False
+        
     def step_5_enhanced_analysis(self) -> Dict:
-        """步驟5: 增強隨機森林分析 - 修復版本"""
+        """步驟5: 增強隨機森林分析"""
         logger.info("=" * 80)
         logger.info("🔄 步驟5: 增強隨機森林分析")
         logger.info("=" * 80)
@@ -326,36 +513,36 @@ class WorkflowIntegration:
             analysis_config = self.config['analysis']
             chair_config = self.config['chair_params']
             
-            # 構建enhanced_rf_analysis腳本的命令行參數
-            enhanced_args = {
-                'data_file': csv_file,
-                'encoding': 'utf-8',
-                'output_dir': self.config['output_dirs']['enhanced_analysis'],
-                'model_type': analysis_config['model_type'],
-                'test_size': analysis_config.get('test_size', 0.2),
-                'random_state': analysis_config.get('random_state', 42),
-                'n_estimators': analysis_config.get('n_estimators', 100),
-                'max_depth': analysis_config.get('max_depth', 10),
-                # 椅子特徵參數
-                'is_square': chair_config['is_square'],
-                'is_round': chair_config['is_round'],
-                'seat_area': chair_config['seat_area'],
-                'seat_thickness': chair_config['seat_thickness'],
-                'true_weight': chair_config['true_weight'],
-                # 其他可選參數
-                'back_height': chair_config.get('back_height'),
-                'back_volume': chair_config.get('back_volume', 0.000390 * 1000000),
-                'leg_height': chair_config.get('leg_height', 0.3737 * 100),
-                'leg_volume': chair_config.get('leg_volume', 0.001550 * 1000000),
-                'seat_volume': chair_config.get('seat_volume', 0.002771 * 1000000),
-                'svr_kernel': analysis_config.get('svr_kernel', 'rbf'),
-                'svr_c': analysis_config.get('svr_c', 1.0),
-                'svr_epsilon': analysis_config.get('svr_epsilon', 0.1),
-                'dpi': 300
-            }
+            # 構建參數對象
+            from types import SimpleNamespace
+            args = SimpleNamespace(
+                data_file=csv_file,
+                encoding='utf-8',  # 根據原始腳本默認值
+                output_dir=self.config['output_dirs']['enhanced_analysis'],
+                model_type=analysis_config['model_type'],
+                test_size=analysis_config['test_size'],
+                random_state=analysis_config['random_state'],
+                n_estimators=analysis_config['n_estimators'],
+                max_depth=analysis_config['max_depth'],
+                is_square=chair_config['is_square'],
+                is_round=chair_config['is_round'],
+                seat_area=chair_config['seat_area'],
+                seat_thickness=chair_config['seat_thickness'],
+                true_weight=chair_config['true_weight'],
+                back_height=None,
+                back_volume=0.000390 * 1000000,
+                leg_height=0.3737 * 100,
+                leg_volume=0.001550 * 1000000,
+                seat_volume=0.002771 * 1000000,
+                svr_kernel='rbf',
+                svr_c=1.0,
+                svr_epsilon=0.1,
+                dpi=300,
+                comparison_chairs=None
+            )
             
-            # 過濾掉None值
-            enhanced_args = {k: v for k, v in enhanced_args.items() if v is not None}
+            # 導入並執行Enhanced分析
+            from calculate_carbon.enhanced_rf_analysis import main as enhanced_main
             
             # 保存原始argv並設置新的
             import sys
@@ -364,33 +551,19 @@ class WorkflowIntegration:
             try:
                 # 設置模擬的命令行參數
                 sys.argv = ['enhanced_rf_analysis_enhanced.py']
-                for key, value in enhanced_args.items():
-                    if isinstance(value, bool):
-                        if value:
-                            sys.argv.append(f'--{key}')
-                    else:
-                        sys.argv.extend([f'--{key}', str(value)])
                 
-                logger.info(f"Enhanced分析命令行參數: {' '.join(sys.argv[1:])}")
-                
-                # 導入並執行Enhanced分析
-                try:
-                    from calculate_carbon.enhanced_rf_analysis import main as enhanced_main
-                    enhanced_main()
-                except ImportError:
-                    # 如果導入失敗，嘗試直接調用
-                    logger.warning("無法導入enhanced_rf_analysis模組，嘗試直接執行")
-                    import subprocess
-                    cmd = [sys.executable, 'calculate_carbon/enhanced_rf_analysis.py'] + sys.argv[1:]
-                    result = subprocess.run(cmd, capture_output=True, text=True)
-                    if result.returncode != 0:
-                        raise Exception(f"Enhanced分析執行失敗: {result.stderr}")
+                # 直接調用main函數並傳入args（需要修改main函數支持）
+                result = enhanced_main()
                 
                 step_time = time.time() - step_start_time
                 self.timing_records['step_5'] = step_time
                 
-                logger.info(f"✅ 步驟5完成: 增強分析 (耗時: {step_time:.2f}秒)")
-                return {'success': True, 'output_dir': self.config['output_dirs']['enhanced_analysis']}
+                if result:
+                    logger.info(f"✅ 步驟5完成: 增強分析 (耗時: {step_time:.2f}秒)")
+                    return {'success': True, 'result': result}
+                else:
+                    logger.warning("⚠️  步驟5完成但返回None")
+                    return {'success': True, 'result': None}
                 
             finally:
                 # 恢復原始argv
@@ -399,7 +572,7 @@ class WorkflowIntegration:
         except Exception as e:
             logger.error(f"❌ 步驟5執行異常: {e}")
             return {'success': False, 'error': str(e)}
-        
+    
     def run_workflow(self, start_step: int = 1, end_step: int = 5) -> Dict:
         """
         運行完整工作流程

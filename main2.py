@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 from datetime import datetime
 import olca
+import numpy as np
+from openLCA import OpenLCACalculator
 
 load_dotenv(r"./.env", override=True)
 
@@ -340,6 +342,7 @@ class ChairAnalysisWorkflow:
     #     except Exception as e:
     #         logger.error(f"LCA 分析異常: {e}")
     #         return {'success': False, 'error': str(e)}
+    
     def phase_5_lca_analysis(self) -> Dict:
         """階段5: LCA分析 - 使用 OpenLCA"""
         logger.info("=" * 80)
@@ -349,7 +352,7 @@ class ChairAnalysisWorkflow:
         phase_start = time.time()
         
         try:
-           # 收集分析所需的數據
+            # 收集分析所需的數據
             chair_data_list = self._collect_chair_data()
             
             if not chair_data_list:
@@ -358,29 +361,50 @@ class ChairAnalysisWorkflow:
             
             lca_results = []
             
+            # 初始化 OpenLCA 計算器
+            calc = OpenLCACalculator(port=8080)
+            
             # 嘗試連接 OpenLCA 服務器
             try:
-                client = olca.Client(port=8080)  # 正確的客戶端初始化方式
-                use_openlca_server = True
-                logger.info("✅ 成功連接到 OpenLCA 服務器")
-            except Exception:
-                logger.warning("⚠️  無法連接到 OpenLCA 服務器，使用快速評估模式")
+                use_openlca_server = calc.connect()
+                if use_openlca_server:
+                    logger.info("✅ 成功連接到 OpenLCA 服務器")
+                    
+                    # 獲取可用的產品系統和影響評估方法
+                    systems = calc.get_product_systems()
+                    methods = calc.get_impact_methods()
+                    
+                    # 選擇第一個可用的產品系統和影響評估方法（可根據需要調整）
+                    system_id = systems[0][0] if systems else None
+                    method_id = methods[0][0] if methods else None
+                    
+                    if system_id:
+                        logger.info(f"使用產品系統: {systems[0][1]}")
+                    if method_id:
+                        logger.info(f"使用影響評估方法: {methods[0][1]}")
+                else:
+                    logger.warning("⚠️  無法連接到 OpenLCA 服務器，使用快速評估模式")
+                    system_id = None
+                    method_id = None
+            except Exception as e:
+                logger.warning(f"⚠️  連接 OpenLCA 服務器失敗: {e}，使用快速評估模式")
                 use_openlca_server = False
-                client = None
+                system_id = None
+                method_id = None
             
             # 對每個椅子進行 LCA 分析
             for i, chair_data in enumerate(chair_data_list):
                 logger.info(f"分析椅子 {i+1}/{len(chair_data_list)}...")
                 
                 try:
-                    if use_openlca_server and client:
+                    if use_openlca_server and system_id and calc.client:
                         # 使用 OpenLCA 服務器進行完整 LCA
-                        lca_result = self._perform_openlca_calculation(client, chair_data)
+                        lca_result = self._perform_openlca_calculation(calc, chair_data, system_id, method_id)
                     else:
                         # 使用快速評估（自定義函數）
                         lca_result = self._perform_quick_lca_assessment({
                             'weight': chair_data.get('geometry', {}).get('estimated_weight', 5.0),
-                            'materials': chair_data.get('material_composition', {})
+                            'materials': chair_data.get('material_composition', {'wood': 100})  # 預設為100%木頭
                         })
                     
                     lca_result['chair_id'] = chair_data.get('id', f'chair_{i+1}')
@@ -390,9 +414,8 @@ class ChairAnalysisWorkflow:
                     logger.error(f"椅子 {i+1} LCA 分析失敗: {e}")
                     continue
             
-            # 關閉 OpenLCA 客戶端
-            if client:
-                client.close()
+            # 關閉 OpenLCA 計算器
+            calc.close()
             
             # 保存 LCA 結果
             self._save_lca_results(lca_results)
@@ -425,6 +448,105 @@ class ChairAnalysisWorkflow:
             logger.error(f"LCA 分析異常: {e}")
             return {'success': False, 'error': str(e)}
 
+    def _perform_openlca_calculation(self, calc: OpenLCACalculator, chair_data: Dict, 
+                                    system_id: str, method_id: str = None) -> Dict:
+        """使用 OpenLCA 進行實際 LCA 計算"""
+        try:
+            # 獲取椅子重量
+            weight = chair_data.get('geometry', {}).get('estimated_weight', 5.0)
+            
+            # 執行計算
+            result = calc.run_calculation(system_id, amount=weight, impact_method_id=method_id)
+            
+            if result:
+                # 獲取影響評估結果
+                if method_id:
+                    impact_results = calc.get_impact_results(result)
+                    
+                    # 尋找碳足跡相關的影響類別
+                    carbon_footprint = 0
+                    if not impact_results.empty:
+                        carbon_rows = impact_results[
+                            impact_results['category_name'].str.contains('carbon|gwp|climate', case=False, na=False)
+                        ]
+                        if not carbon_rows.empty:
+                            carbon_footprint = carbon_rows.iloc[0]['amount']
+                else:
+                    carbon_footprint = weight * 0.5  # 簡化估算
+                
+                # 獲取庫存結果
+                inventory = calc.get_inventory_results(result)
+                
+                # 釋放結果資源
+                calc.close_result(result)
+                
+                return {
+                    'total_carbon_footprint': carbon_footprint,
+                    'calculation_method': 'openlca_server',
+                    'inventory_inputs': len(inventory['inputs']),
+                    'inventory_outputs': len(inventory['outputs']),
+                    'weight': weight
+                }
+            else:
+                # 如果計算失敗，使用快速評估
+                return self._perform_quick_lca_assessment({
+                    'weight': weight,
+                    'materials': {'wood': 100}  # 預設為100%木頭
+                })
+                
+        except Exception as e:
+            logger.error(f"OpenLCA 計算失敗: {e}")
+            # 回退到快速評估
+            return self._perform_quick_lca_assessment({
+                'weight': chair_data.get('geometry', {}).get('estimated_weight', 5.0),
+                'materials': {'wood': 100}  # 預設為100%木頭
+            })
+
+    def _perform_quick_lca_assessment(self, data: Dict) -> Dict:
+        """快速 LCA 評估（當無法連接到 OpenLCA 服務器時使用）"""
+        try:
+            weight = data.get('weight', 5.0)
+            materials = data.get('materials', {'wood': 100})  # 預設為100%木頭
+            
+            # 簡化的碳足跡計算（基於材料和重量的估算）
+            carbon_factors = {
+                'steel': 2.5,      # kg CO2e per kg
+                'plastic': 3.0,    # kg CO2e per kg
+                'wood': 0.5,       # kg CO2e per kg - 木頭的碳足跡較低
+                'aluminum': 8.0,   # kg CO2e per kg
+                'fabric': 5.0      # kg CO2e per kg
+            }
+            
+            total_carbon = 0
+            material_breakdown = {}
+            
+            for material, percentage in materials.items():
+                factor = carbon_factors.get(material.lower(), 0.5)  # 預設使用木頭的係數
+                material_weight = weight * (percentage / 100)
+                material_carbon = material_weight * factor
+                total_carbon += material_carbon
+                
+                material_breakdown[material] = {
+                    'weight': material_weight,
+                    'carbon_footprint': material_carbon,
+                    'factor': factor
+                }
+            
+            return {
+                'total_carbon_footprint': total_carbon,
+                'calculation_method': 'quick_assessment',
+                'materials_breakdown': material_breakdown,
+                'weight': weight
+            }
+            
+        except Exception as e:
+            logger.error(f"快速評估失敗: {e}")
+            return {
+                'total_carbon_footprint': 0,
+                'calculation_method': 'quick_assessment',
+                'error': str(e)
+            }
+    
     def _perform_openlca_calculation(self, client, chair_data):
         """使用 OpenLCA 進行實際 LCA 計算"""
         try:
