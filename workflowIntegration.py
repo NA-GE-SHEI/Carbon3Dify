@@ -73,7 +73,7 @@ class WorkflowIntegration:
             
             # Bootstrap分析參數
             'bootstrap': {
-                'n_iterations': 50,
+                'n_iterations': 10,
                 'ci_level': 0.95,
                 'skip_execution': False,  # 是否跳過執行，直接分析現有結果
             },
@@ -930,7 +930,7 @@ def parse_args():
                        help='GLB模型輸入目錄')
     parser.add_argument('--csv_file', type=str, default='./models/chair_raw_data_v2_idmatched_revised_cleaned_aug_v2.csv',
                        help='CSV數據文件路徑')
-    parser.add_argument('--bootstrap_iterations', type=int, default=50,
+    parser.add_argument('--bootstrap_iterations', type=int, default=10,
                        help='Bootstrap迭代次數')
     parser.add_argument('--model_type', type=str, default='all',
                        choices=['rf', 'xgb', 'mlr', 'svr', 'all'],

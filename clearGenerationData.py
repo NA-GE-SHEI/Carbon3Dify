@@ -14,7 +14,8 @@ remove_dir_list = [
     "./lca_results",
     "./workflow_reports",
     "./integrated_results",
-    "./enhanced_rf_result"
+    "./enhanced_rf_result",
+    "./result"
 ]
 
 remove_files_list = [

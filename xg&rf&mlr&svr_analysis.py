@@ -14,13 +14,14 @@ from sklearn import tree
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 
+
 def parse_args():
     """解析命令行參數"""
     parser = argparse.ArgumentParser(description='椅子重量預測與分析工具')
     
     # 主要參數
-    parser.add_argument('--data_file', type=str, default='chair_data_V1.csv', help='資料檔案路徑')
-    parser.add_argument('--encoding', type=str, default='big5', help='CSV檔案編碼')
+    parser.add_argument('--data_file', type=str, default='./models/chair_raw_data_v2_idmatched_revised_cleaned_aug_v2.csv', help='資料檔案路徑')
+    parser.add_argument('--encoding', type=str, default='utf-8', help='CSV檔案編碼')
     parser.add_argument('--output_dir', type=str, default='./result', help='輸出目錄')
     parser.add_argument('--model_type', type=str, default='all', 
                         choices=['rf', 'xgb', 'mlr', 'svr', 'all'], 
@@ -59,6 +60,7 @@ def parse_args():
     
     return parser.parse_args()
 
+
 def setup_output_dir(base_dir):
     """建立輸出目錄"""
     if not os.path.exists(base_dir):
@@ -91,10 +93,11 @@ def setup_output_dir(base_dir):
     print(f"將結果存儲到: {new_result_dir}")
     return new_result_dir
 
+
 def prepare_data(file_path, encoding):
     """讀取和準備資料"""
     # 設定中文字體顯示，避免亂碼警告
-    plt.rcParams['font.sans-serif'] = ['SimSun', 'Microsoft JhengHei', 'Arial Unicode MS']
+    plt.rcParams['font.sans-serif'] = ['Noto Sans CJK SC', 'WenQuanYi Zen Hei', 'DejaVu Sans']
     plt.rcParams['axes.unicode_minus'] = False
     
     # 讀取CSV檔案
@@ -131,7 +134,7 @@ def prepare_data(file_path, encoding):
                     # 已經是數值類型的直接確保為浮點數
                     df[col] = df[col].astype(float)
             except Exception as e:
-                print(f"繪製椅子重量比較圖時發生錯誤: {e}")
+                print(f"Error drawing chair weight comparison chart: {e}")
                 print(f"處理欄位 '{col}' 時發生錯誤: {e}")
     
     # 再次檢查資料型態
@@ -140,13 +143,16 @@ def prepare_data(file_path, encoding):
     
     return df
 
+
 def preprocess_data(df, test_size, random_state):
     """資料預處理與分割，調整為你的CSV格式，並將缺失值替換成0"""
+
 
     # 定義特徵和目標變數 - 確保列名和資料集匹配
     feature_cols = ['方形椅', '圓形椅', '椅背高度(cm)', '椅背體積(cm)',
                     '椅墊面積(cm)', '椅墊厚度(cm)', '椅腳高度(cm)', '椅腳體積(cm)']
     target_col = '重量(kg)'
+
 
     # 確保所有列都存在
     for col in feature_cols:
@@ -163,20 +169,25 @@ def preprocess_data(df, test_size, random_state):
     
     y = df[target_col].fillna(0)
 
+
     # 缺失值處理器
     imputer = SimpleImputer(strategy='constant', fill_value=0)
     X_imputed = imputer.fit_transform(X)
     X = pd.DataFrame(X_imputed, columns=valid_feature_cols)
 
+
     # 資料集分割
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+
 
     # 標準化特徵
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
+
     return X, y, X_train, X_test, y_train, y_test, X_train_scaled, X_test_scaled, imputer, scaler
+
 
 def train_and_evaluate_rf(X_train_scaled, y_train, X_test_scaled, y_test, args):
     """訓練與評估隨機森林模型"""
@@ -206,6 +217,7 @@ def train_and_evaluate_rf(X_train_scaled, y_train, X_test_scaled, y_test, args):
     
     return rf_model, y_pred, rmse, r2
 
+
 def train_and_evaluate_xgb(X_train_scaled, y_train, X_test_scaled, y_test, args):
     """訓練與評估XGBoost模型"""
     print("\n訓練XGBoost模型...")
@@ -233,6 +245,7 @@ def train_and_evaluate_xgb(X_train_scaled, y_train, X_test_scaled, y_test, args)
     
     return xgb_model, y_pred, rmse, r2
 
+
 def train_and_evaluate_mlr(X_train_scaled, y_train, X_test_scaled, y_test, args):
     """訓練與評估多元線性迴歸模型"""
     print("\n訓練多元線性迴歸模型...")
@@ -253,6 +266,7 @@ def train_and_evaluate_mlr(X_train_scaled, y_train, X_test_scaled, y_test, args)
     print(f"R²: {r2:.4f}")
     
     return mlr_model, y_pred, rmse, r2
+
 
 def train_and_evaluate_svr(X_train_scaled, y_train, X_test_scaled, y_test, args):
     """訓練與評估支持向量迴歸模型"""
@@ -280,6 +294,7 @@ def train_and_evaluate_svr(X_train_scaled, y_train, X_test_scaled, y_test, args)
     
     return svr_model, y_pred, rmse, r2
 
+
 def create_new_chair_data(args):
     """建立新椅子的特徵資料，符合您的CSV欄位格式，並將缺失值替換成0"""
     # 修正：確保欄位名稱與資料集中的列名完全一致
@@ -294,7 +309,9 @@ def create_new_chair_data(args):
         '椅腳體積(cm)': [args.leg_volume if args.leg_volume is not None else 0]
     })
 
+
     return new_chair
+
 
 def visualize_feature_importance(model, X, output_dir, model_name, args):
     """視覺化特徵重要性"""
@@ -326,12 +343,13 @@ def visualize_feature_importance(model, X, output_dir, model_name, args):
     plt.bar(range(len(sorted_importance)), sorted_importance, align='center', 
             color=cm.Blues(np.linspace(0.4, 0.8, len(sorted_importance))))
     plt.xticks(range(len(sorted_importance)), sorted_feature_names, rotation=45, ha='right')
-    plt.title(f'椅子重量影響因素分析 ({model_name})', fontsize=16)
-    plt.xlabel('特徵', fontsize=14)
-    plt.ylabel('重要性', fontsize=14)
+    plt.title(f'Chair Weight Influencing Factors Analysis ({model_name})', fontsize=16)
+    plt.xlabel('Features', fontsize=14)
+    plt.ylabel('Importance', fontsize=14)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, f'{model_name.lower().replace(" ", "_")}_feature_importance.png'), dpi=args.dpi)
     plt.close()
+
 
 def visualize_predictions(y_test, y_pred, output_dir, model_name, args):
     """視覺化實際值與預測值比較"""
@@ -339,13 +357,14 @@ def visualize_predictions(y_test, y_pred, output_dir, model_name, args):
     # 修正：使用顏色映射的正確方法
     plt.scatter(y_test, y_pred, alpha=0.7, s=80, color=cm.Blues(0.7))
     plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=2)
-    plt.xlabel('實際重量 (kg)', fontsize=14)
-    plt.ylabel('預測重量 (kg)', fontsize=14)
-    plt.title(f'實際重量與預測重量比較 ({model_name})', fontsize=16)
+    plt.xlabel('Actual Weight (kg)', fontsize=14)
+    plt.ylabel('Predicted Weight (kg)', fontsize=14)
+    plt.title(f'Actual vs Predicted Weight Comparison ({model_name})', fontsize=16)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, f'{model_name.lower().replace(" ", "_")}_actual_vs_predicted.png'), dpi=args.dpi)
     plt.close()
+
 
 def visualize_seat_volume_weight(model, X, scaler, output_dir, model_name, args):
     """視覺化椅墊體積與重量關係"""
@@ -385,22 +404,23 @@ def visualize_seat_volume_weight(model, X, scaler, output_dir, model_name, args)
         
         # 只有在知道真實重量時才繪製參考線
         if args.true_weight is not None:
-            plt.axhline(y=args.true_weight, color='g', linestyle='--', label=f'正確重量 ({args.true_weight} kg)')
+            plt.axhline(y=args.true_weight, color='g', linestyle='--', label=f'Actual Weight ({args.true_weight} kg)')
             plt.scatter([args.seat_volume/1000], [args.true_weight], s=100, c='red', zorder=5)
         
         # 在任何情況下都顯示當前椅墊體積的位置
-        plt.axvline(x=args.seat_volume/1000, color='r', linestyle='--', label=f'您提供的椅子 ({args.seat_volume/1000:.0f} cm³)')
+        plt.axvline(x=args.seat_volume/1000, color='r', linestyle='--', label=f'Your Chair ({args.seat_volume/1000:.0f} cm³)')
         
-        plt.xlabel('椅墊體積 (cm³)', fontsize=14)
-        plt.ylabel('椅子重量 (kg)', fontsize=14)
-        plt.title(f'椅墊體積對椅子重量的影響 ({model_name})', fontsize=16)
+        plt.xlabel('Seat Volume (cm³)', fontsize=14)
+        plt.ylabel('Chair Weight (kg)', fontsize=14)
+        plt.title(f'Impact of Seat Volume on Chair Weight ({model_name})', fontsize=16)
         plt.grid(True, alpha=0.3)
         plt.legend(fontsize=12)
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, f'{model_name.lower().replace(" ", "_")}_seat_volume_vs_weight.png'), dpi=args.dpi)
         plt.close()
     except Exception as e:
-        print(f"繪製椅墊體積與重量關係圖時發生錯誤: {e}")
+        print(f"Error drawing seat volume vs weight chart: {e}")
+
 
 def visualize_3d_relationship(model, X, scaler, output_dir, model_name, args):
     """視覺化3D關係 (椅腳體積, 椅墊厚度, 重量)"""
@@ -444,32 +464,33 @@ def visualize_3d_relationship(model, X, scaler, output_dir, model_name, args):
         
         if args.true_weight is not None:
             ax.scatter([args.leg_volume], [args.seat_thickness], [args.true_weight], 
-                      color='red', s=100, label='您的椅子(真實)')
+                      color='red', s=100, label='Your Chair (Actual)')
         else:
             ax.scatter([args.leg_volume], [args.seat_thickness], [predicted_weight], 
-                      color='red', s=100, label='您的椅子(預測)')
+                      color='red', s=100, label='Your Chair (Predicted)')
         
-        ax.set_xlabel('椅腳體積 (cm³)', fontsize=12)
-        ax.set_ylabel('椅墊厚度 (cm)', fontsize=12)
-        ax.set_zlabel('椅子重量 (kg)', fontsize=12)
-        ax.set_title(f'椅腳體積、椅墊厚度與椅子重量的關係 ({model_name})', fontsize=14)
-        fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5, label='重量 (kg)')
+        ax.set_xlabel('Leg Volume (cm³)', fontsize=12)
+        ax.set_ylabel('Seat Thickness (cm)', fontsize=12)
+        ax.set_zlabel('Chair Weight (kg)', fontsize=12)
+        ax.set_title(f'Relationship between Leg Volume, Seat Thickness and Chair Weight ({model_name})', fontsize=14)
+        fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5, label='Weight (kg)')
         plt.savefig(os.path.join(output_dir, f'{model_name.lower().replace(" ", "_")}_3d_weight_analysis.png'), dpi=args.dpi)
         plt.close()
     except Exception as e:
-        print(f"繪製3D關係圖時發生錯誤: {e}")
+        print(f"Error drawing 3D relationship chart: {e}")
+
 
 def visualize_chair_comparison(output_dir, args, predicted_weight):
     """視覺化椅子重量比較 - 修改為使用預測重量"""
     try:
         # 椅子列表 - 使用預測的重量
         chairs = [
-            {"name": "您的椅子 (預測)", "weight": predicted_weight}
+            {"name": "Your Chair (Predicted)", "weight": predicted_weight}
         ]
         
         # 如果有真實重量，也加入比較
         if args.true_weight is not None:
-            chairs.append({"name": "您的椅子 (真實)", "weight": args.true_weight})
+            chairs.append({"name": "Your Chair (Actual)", "weight": args.true_weight})
         
         # 如果提供了比較椅子資料，則解析並添加
         if args.comparison_chairs:
@@ -480,11 +501,11 @@ def visualize_chair_comparison(output_dir, args, predicted_weight):
         else:
             # 否則使用預設值
             chairs.extend([
-                {"name": "標準辦公椅", "weight": 6.5},
-                {"name": "高背椅", "weight": 7.8},
-                {"name": "輕量餐椅", "weight": 3.5},
-                {"name": "折疊椅", "weight": 2.8},
-                {"name": "厚墊沙發椅", "weight": 8.2}
+                {"name": "Standard Office Chair", "weight": 6.5},
+                {"name": "High-back Chair", "weight": 7.8},
+                {"name": "Lightweight Dining Chair", "weight": 3.5},
+                {"name": "Folding Chair", "weight": 2.8},
+                {"name": "Cushioned Armchair", "weight": 8.2}
             ])
         
         plt.figure(figsize=(12, 6))
@@ -494,9 +515,9 @@ def visualize_chair_comparison(output_dir, args, predicted_weight):
         # 設定顏色 - 預測值為藍色，真實值(如果有)為綠色
         colors = []
         for name in names:
-            if "預測" in name:
+            if "Predicted" in name:
                 colors.append(cm.Blues(0.8))
-            elif "真實" in name:
+            elif "Actual" in name:
                 colors.append(cm.Greens(0.8))
             else:
                 colors.append(cm.Blues(0.5))
@@ -507,9 +528,9 @@ def visualize_chair_comparison(output_dir, args, predicted_weight):
         if args.true_weight is not None:
             plt.axhline(y=args.true_weight, color='g', linestyle='--', alpha=0.7)
         
-        plt.xlabel('椅子類型', fontsize=14)
-        plt.ylabel('重量 (kg)', fontsize=14)
-        plt.title('椅子重量比較', fontsize=16)
+        plt.xlabel('Chair Type', fontsize=14)
+        plt.ylabel('Weight (kg)', fontsize=14)
+        plt.title('Chair Weight Comparison', fontsize=16)
         plt.xticks(rotation=15)
         plt.grid(True, alpha=0.3, axis='y')
         
@@ -524,7 +545,8 @@ def visualize_chair_comparison(output_dir, args, predicted_weight):
         plt.savefig(os.path.join(output_dir, 'chair_weight_comparison.png'), dpi=args.dpi)
         plt.close()
     except Exception as e:
-        print(f"繪製椅子重量比較圖時發生錯誤: {e}")
+        print(f"Error drawing chair weight comparison chart: {e}")
+
 
 def visualize_decision_tree(model, X, output_dir, args):
     """視覺化隨機森林中的單一決策樹"""
@@ -535,11 +557,12 @@ def visualize_decision_tree(model, X, output_dir, args):
                       filled=True,
                       rounded=True,
                       max_depth=3)
-        plt.title('隨機森林中的單一決策樹示例', fontsize=16)
+        plt.title('Single Decision Tree Example from Random Forest', fontsize=16)
         plt.savefig(os.path.join(output_dir, 'decision_tree_example.png'), dpi=args.dpi)
         plt.close()
     except Exception as e:
-        print(f"繪製決策樹示例時發生錯誤: {e}")
+        print(f"Error drawing decision tree example: {e}")
+
 
 def visualize_model_comparison(models_results, output_dir, args):
     """視覺化不同模型的評估指標比較"""
@@ -554,8 +577,8 @@ def visualize_model_comparison(models_results, output_dir, args):
         
         # 繪製RMSE對比
         bars1 = ax1.bar(model_names, rmse_values, color=cm.Blues(np.linspace(0.5, 0.9, len(model_names))))
-        ax1.set_ylabel('RMSE（越低越好）', fontsize=14)
-        ax1.set_title('不同模型的RMSE比較', fontsize=16)
+        ax1.set_ylabel('RMSE (Lower is Better)', fontsize=14)
+        ax1.set_title('RMSE Comparison of Different Models', fontsize=16)
         ax1.grid(True, alpha=0.3, axis='y')
         
         # 添加RMSE數值標籤
@@ -567,8 +590,8 @@ def visualize_model_comparison(models_results, output_dir, args):
         
         # 繪製R²對比
         bars2 = ax2.bar(model_names, r2_values, color=cm.Greens(np.linspace(0.5, 0.9, len(model_names))))
-        ax2.set_ylabel('R²（越高越好）', fontsize=14)
-        ax2.set_title('不同模型的R²比較', fontsize=16)
+        ax2.set_ylabel('R² (Higher is Better)', fontsize=14)
+        ax2.set_title('R² Comparison of Different Models', fontsize=16)
         ax2.grid(True, alpha=0.3, axis='y')
         
         # 添加R²數值標籤
@@ -582,7 +605,8 @@ def visualize_model_comparison(models_results, output_dir, args):
         plt.savefig(os.path.join(output_dir, 'model_comparison.png'), dpi=args.dpi)
         plt.close()
     except Exception as e:
-        print(f"繪製模型比較圖時發生錯誤: {e}")
+        print(f"Error drawing model comparison chart: {e}")
+
 
 def main():
     """主函數"""
@@ -754,7 +778,7 @@ def main():
         # 椅子重量比較視覺化 - 使用平均預測的重量
         visualize_chair_comparison(output_dir, args, avg_predicted_weight)
     except Exception as e:
-        print(f"繪製椅子重量比較圖時發生錯誤: {e}")
+        print(f"Error drawing chair weight comparison chart: {e}")
     
     # 保存縮放器
     try:
@@ -805,6 +829,7 @@ def main():
     
     # 返回平均預測值，方便其他程式呼叫使用
     return avg_predicted_weight if len(results) > 0 else None
+
 
 if __name__ == "__main__":
     main()

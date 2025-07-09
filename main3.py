@@ -652,22 +652,25 @@ def run_workflow_integration(workflow_config=None):
         logger.info(f"執行命令: {' '.join(cmd)}")
         
         # 執行工作流程
-        result = subprocess.run(cmd, capture_output=False, text=True, encoding='utf-8')
-        
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
+
         if result.returncode == 0:
             logger.info("✅ 3D模型處理工作流程執行成功")
-            logger.info("輸出信息:")
-            for line in result.stdout.strip().split('\n'):
-                if line.strip():
-                    logger.info(f"  {line}")
+            if result.stdout:
+                logger.info("輸出信息:")
+                for line in result.stdout.strip().split('\n'):
+                    if line.strip():
+                        logger.info(f"  {line}")
             return True
         else:
             logger.error("❌ 3D模型處理工作流程執行失敗")
-            logger.error("錯誤信息:")
-            for line in result.stderr.strip().split('\n'):
-                if line.strip():
-                    logger.error(f"  {line}")
+            if result.stderr:
+                logger.error("錯誤信息:")
+                for line in result.stderr.strip().split('\n'):
+                    if line.strip():
+                        logger.error(f"  {line}")
             return False
+
             
     except Exception as e:
         logger.error(f"❌ 執行工作流程時發生異常: {e}")

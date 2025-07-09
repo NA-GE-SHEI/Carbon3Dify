@@ -142,7 +142,7 @@ def create_workflow_config():
             "generation_filter": None  # 處理所有生成變體
         },
         "bootstrap": {
-            "n_iterations": 30,  # 適中的迭代次數
+            "n_iterations": 10,  # 適中的迭代次數
             "ci_level": 0.95,
             "skip_execution": False
         },
