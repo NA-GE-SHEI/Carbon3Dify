@@ -68,138 +68,157 @@ def check_3d_models_generated():
     return total_glb_files > 0
 
 def collect_chair_data_for_lca() -> List[Dict]:
-    """收集椅子數據用於LCA分析"""
+    """收集椅子數據用於LCA分析 - 動態重量版"""
     logger.info("🔍 收集椅子數據用於LCA分析...")
     chairs_data = []
     
+    # 預設重量
+    default_weight = 4.2
+    predicted_weight = default_weight
+    weight_source = 'default'
+    
     try:
-        # 1. 從材料分析結果收集數據
-        # material_analysis_dir = Path("./material_analysis")
-        # if material_analysis_dir.exists():
-        #     logger.info("📊 發現材料分析結果，正在收集...")
-            
-        #     # 查找材料分析報告
-        #     csv_files = list(material_analysis_dir.glob("*.csv"))
-        #     json_files = list(material_analysis_dir.glob("*.json"))
-            
-        #     if csv_files or json_files:
-        #         logger.info(f"找到 {len(csv_files)} 個CSV文件和 {len(json_files)} 個JSON文件")
-                
-        #         # 模擬從材料分析中提取木材比例
-        #         for i, csv_file in enumerate(csv_files[:5]):  # 限制處理前5個文件
-        #             try:
-        #                 chair_data = {
-        #                     'chair_id': f'Chair_{i+1:03d}',
-        #                     'source_file': str(csv_file),
-        #                     'material_analysis': {
-        #                         'wood_percentage': 85 + (i * 2),  # 模擬木材比例 85-93%
-        #                         'has_material_detection': True
-        #                     },
-        #                     'seat_area': 400 + (i * 20),     # 模擬座椅面積
-        #                     'seat_thickness': 2.5 + (i * 0.2),  # 模擬座椅厚度
-        #                     'geometry_analysis': {
-        #                         'bounding_box_volume': 2500 + (i * 300)  # 模擬體積
-        #                     },
-        #                     'estimated_weight': 3.5 + (i * 0.5),  # 模擬重量
-        #                     'wood_type': ['oak', 'pine', 'birch', 'maple', 'beech'][i % 5]  # 輪換木材類型
-        #                 }
-        #                 chairs_data.append(chair_data)
-        #                 logger.info(f"  ✅ 收集椅子數據: {chair_data['chair_id']}")
-        #             except Exception as e:
-        #                 logger.warning(f"  ⚠️ 處理文件 {csv_file} 時出錯: {e}")
+        # 1. 從工作流程報告中讀取預測重量
+        workflow_reports_dir = Path("./workflow_reports")
+        if workflow_reports_dir.exists():
+            # 查找最新的工作流程報告
+            report_files = list(workflow_reports_dir.glob("workflow_report_*.json"))
+            if report_files:
+                latest_report = max(report_files, key=lambda x: x.stat().st_mtime)
+                try:
+                    with open(latest_report, 'r', encoding='utf-8') as f:
+                        workflow_data = json.load(f)
+                    
+                    # 方法1: 從 final_predicted_weight 讀取
+                    if 'final_predicted_weight' in workflow_data and workflow_data['final_predicted_weight'] is not None:
+                        predicted_weight = float(workflow_data['final_predicted_weight'])
+                        weight_source = 'workflow_final_prediction'
+                        logger.info(f"✅ 從工作流程報告獲取最終預測重量: {predicted_weight:.2f} kg")
+                    
+                    # 方法2: 從 predicted_weights 讀取
+                    elif 'predicted_weights' in workflow_data:
+                        weights = workflow_data['predicted_weights']
+                        if 'step_5' in weights and weights['step_5'] is not None:
+                            predicted_weight = float(weights['step_5'])
+                            weight_source = 'workflow_step5_prediction'
+                        elif weights:
+                            # 取最後一個非空的預測重量
+                            for step_key in reversed(list(weights.keys())):
+                                if weights[step_key] is not None:
+                                    predicted_weight = float(weights[step_key])
+                                    weight_source = f'workflow_{step_key}_prediction'
+                                    break
+                        logger.info(f"✅ 從工作流程報告獲取預測重量: {predicted_weight:.2f} kg (來源: {weight_source})")
+                    
+                    # 方法3: 從 step_results 讀取
+                    elif 'step_results' in workflow_data:
+                        for step_num in ['5', '4', '3']:  # 優先順序
+                            if step_num in workflow_data['step_results']:
+                                step_result = workflow_data['step_results'][step_num]
+                                if 'predicted_weight' in step_result and step_result['predicted_weight'] is not None:
+                                    predicted_weight = float(step_result['predicted_weight'])
+                                    weight_source = f'workflow_step{step_num}_prediction'
+                                    logger.info(f"✅ 從步驟{step_num}獲取預測重量: {predicted_weight:.2f} kg")
+                                    break
+                    
+                    # 驗證預測重量的合理性
+                    if predicted_weight <= 0 or predicted_weight > 50:  # 椅子重量應該在合理範圍內
+                        logger.warning(f"⚠️ 預測重量 {predicted_weight:.2f} kg 超出合理範圍，使用預設值")
+                        predicted_weight = default_weight
+                        weight_source = 'default_fallback'
+                    
+                except Exception as e:
+                    logger.warning(f"⚠️ 讀取工作流程報告失敗: {e}")
+                    logger.info(f"使用預設重量: {default_weight} kg")
         
-        # 2. 從3D模型分析收集數據
+        # 2. 如果沒有找到工作流程報告，嘗試從enhanced_analysis結果中讀取
+        if predicted_weight == default_weight:
+            enhanced_analysis_dir = Path("./enhanced_analysis")
+            if enhanced_analysis_dir.exists():
+                result_files = list(enhanced_analysis_dir.glob("**/detailed_analysis_results.txt"))
+                if result_files:
+                    latest_file = max(result_files, key=lambda x: x.stat().st_mtime)
+                    try:
+                        with open(latest_file, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            import re
+                            weight_pattern = r'新椅子預測重量[：:]\s*(\d+\.?\d*)\s*kg'
+                            matches = re.findall(weight_pattern, content)
+                            if matches:
+                                # 取第一個匹配的結果（通常是正確的預測）
+                                predicted_weight = float(matches[0])
+                                weight_source = 'enhanced_analysis_file'
+                                logger.info(f"✅ 從enhanced_analysis結果文件獲取重量: {predicted_weight:.2f} kg")
+                    except Exception as e:
+                        logger.warning(f"⚠️ 讀取enhanced_analysis結果失敗: {e}")
+        
+        # 記錄最終使用的重量
+        logger.info(f"🎯 最終使用的預測重量: {predicted_weight:.2f} kg (來源: {weight_source})")
+        
+        # 3. 從3D模型分析收集數據，使用動態重量
         models_dir = Path("./3d_models")
         chair_dir = models_dir / "Chair"
         
         if chair_dir.exists():
             logger.info("🏗️ 發現3D模型，正在收集幾何數據...")
-            generation_dirs = [d for d in chair_dir.iterdir() 
-                              if d.is_dir() and d.name.startswith('Chair_generation_')]
+            generation_dirs = [d for d in chair_dir.iterdir()
+                             if d.is_dir() and d.name.startswith('Chair_generation_')]
             
-            for i, gen_dir in enumerate(generation_dirs[:3]):  # 限制處理前3個生成變體
+            for i, gen_dir in enumerate(generation_dirs[:3]):
                 glb_files = list(gen_dir.glob("*.glb"))
                 if glb_files:
                     chair_id = f"Chair_{gen_dir.name}"
                     
-                    # 檢查是否已存在該椅子的數據
-                    existing_chair = next((c for c in chairs_data if c['chair_id'] == chair_id), None)
+                    chair_data = {
+                        'chair_id': chair_id,
+                        '3d_model_path': str(glb_files[0]),
+                        'model_count': len(glb_files),
+                        'material_analysis': {
+                            'wood_percentage': 90,
+                            'has_material_detection': False,
+                            'default_material': 'wood'
+                        },
+                        'seat_area': 450,
+                        'seat_thickness': 3.0,
+                        'geometry_analysis': {
+                            'bounding_box_volume': 3000
+                        },
+                        'estimated_weight': predicted_weight,  # 使用動態預測重量
+                        'wood_type': 'generic_wood',
+                        'weight_source': weight_source
+                    }
                     
-                    if existing_chair:
-                        # 更新現有數據
-                        existing_chair['3d_model_path'] = str(glb_files[0])
-                        existing_chair['model_count'] = len(glb_files)
-                    else:
-                        # 創建新的椅子數據（預設木頭材料）
-                        chair_data = {
-                            'chair_id': chair_id,
-                            '3d_model_path': str(glb_files[0]),
-                            'model_count': len(glb_files),
-                            'material_analysis': {
-                                'wood_percentage': 90,  # 預設90%木材
-                                'has_material_detection': False,
-                                'default_material': 'wood'
-                            },
-                            'seat_area': 450,        # 預設座椅面積
-                            'seat_thickness': 3.0,   # 預設座椅厚度
-                            'geometry_analysis': {
-                                'bounding_box_volume': 3000  # 預設體積
-                            },
-                            'estimated_weight': 4.2,   # 預設重量
-                            'wood_type': 'generic_wood'  # 預設木材類型
-                        }
-                        chairs_data.append(chair_data)
-                    
-                    logger.info(f"  ✅ 收集3D模型數據: {chair_id} ({len(glb_files)} 個文件)")
+                    chairs_data.append(chair_data)
+                    logger.info(f" ✅ 收集3D模型數據: {chair_id} (重量: {predicted_weight:.2f} kg, 來源: {weight_source})")
         
-        # 3. 如果沒有足夠數據，創建預設椅子數據
+        # 4. 如果沒有數據，使用預測重量創建預設配置
         if len(chairs_data) == 0:
-            logger.info("⚠️ 未找到現有數據，創建預設椅子數據用於LCA分析...")
-            
-            default_chairs = [
-                # {
-                #     'chair_id': 'Default_Chair_001',
-                #     'material_analysis': {
-                #         'wood_percentage': 95,
-                #         'has_material_detection': False,
-                #         'default_material': 'wood',
-                #     },
-                #     'seat_area': 400,
-                #     'seat_thickness': 3.0,
-                #     'geometry_analysis': {
-                #         'bounding_box_volume': 2800
-                #     },
-                #     'estimated_weight': 4.0,
-                #     'wood_type': 'oak',
-                #     'source': 'default_configuration'
-                # },
-                # {
-                #     'chair_id': 'Default_Chair_002',
-                #     'material_analysis': {
-                #         'wood_percentage': 88,
-                #         'has_material_detection': False,
-                #         'default_material': 'wood',
-                #     },
-                #     'seat_area': 380,
-                #     'seat_thickness': 2.8,
-                #     'geometry_analysis': {
-                #         'bounding_box_volume': 2600
-                #     },
-                #     'estimated_weight': 3.8,
-                #     'wood_type': 'pine',
-                #     'source': 'default_configuration'
-                # }
-            ]
-            
-            chairs_data.extend(default_chairs)
-            logger.info(f"  ✅ 創建了 {len(default_chairs)} 個預設椅子配置")
+            logger.info("⚠️ 未找到現有數據，使用預測重量創建預設椅子數據...")
+            default_chair = {
+                'chair_id': 'Predicted_Chair_001',
+                'material_analysis': {
+                    'wood_percentage': 90,
+                    'has_material_detection': False,
+                    'default_material': 'wood'
+                },
+                'seat_area': 450,
+                'seat_thickness': 3.0,
+                'geometry_analysis': {
+                    'bounding_box_volume': 3000
+                },
+                'estimated_weight': predicted_weight,  # 使用動態預測重量
+                'wood_type': 'generic_wood',
+                'weight_source': weight_source,
+                'source': 'predicted_configuration'
+            }
+            chairs_data.append(default_chair)
+            logger.info(f" ✅ 創建預測椅子配置 (重量: {predicted_weight:.2f} kg, 來源: {weight_source})")
         
         logger.info(f"📋 總共收集到 {len(chairs_data)} 個椅子的數據用於LCA分析")
         
         # 保存收集的數據用於調試
         debug_file = Path("./workflow_reports") / f"lca_input_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         debug_file.parent.mkdir(exist_ok=True)
-        
         with open(debug_file, 'w', encoding='utf-8') as f:
             json.dump(chairs_data, f, indent=2, ensure_ascii=False)
         logger.info(f"🔍 LCA輸入數據已保存至: {debug_file}")
@@ -208,7 +227,6 @@ def collect_chair_data_for_lca() -> List[Dict]:
         
     except Exception as e:
         logger.error(f"❌ 收集椅子數據時發生錯誤: {e}")
-        
         # 如果出錯，至少返回一個基本的椅子配置
         fallback_data = [{
             'chair_id': 'Fallback_Chair',
@@ -217,52 +235,55 @@ def collect_chair_data_for_lca() -> List[Dict]:
                 'has_material_detection': False,
                 'default_material': 'wood'
             },
-            'seat_area': 400,
+            'seat_area': 450,
             'seat_thickness': 3.0,
             'geometry_analysis': {
-                'bounding_box_volume': 2500
+                'bounding_box_volume': 3000
             },
-            'estimated_weight': 4.0,
+            'estimated_weight': predicted_weight,  # 使用動態預測重量
             'wood_type': 'generic_wood',
+            'weight_source': weight_source,
             'source': 'fallback_configuration'
         }]
-        
-        logger.info("🔄 使用備用椅子配置進行LCA分析")
+        logger.info(f"🔄 使用備用椅子配置進行LCA分析 (重量: {predicted_weight:.2f} kg, 來源: {weight_source})")
         return fallback_data
 
+
 def calculate_chair_lca_fixed(chair_data: Dict) -> Dict:
-    """修復版的椅子LCA計算函數"""
+    """修復版的椅子LCA計算函數 - 使用動態重量"""
     try:
         chair_id = chair_data.get('chair_id', 'Unknown')
-        logger.info(f"🌳 開始LCA分析: {chair_id}")
+        estimated_weight = chair_data.get('estimated_weight', 4.2)  # 動態重量
+        weight_source = chair_data.get('weight_source', 'default')
         
+        logger.info(f"🌳 開始LCA分析: {chair_id} (重量: {estimated_weight:.2f} kg, 來源: {weight_source})")
+
         # 1. 確定材料成分（預設為木頭）
         material_analysis = chair_data.get('material_analysis', {})
         wood_percentage = material_analysis.get('wood_percentage', 90) / 100
         metal_percentage = 1 - wood_percentage
         wood_type = chair_data.get('wood_type', 'generic_wood')
-        
+
         # 2. 計算體積和重量
         geometry_analysis = chair_data.get('geometry_analysis', {})
         estimated_volume = geometry_analysis.get('bounding_box_volume', 2500)  # cm³
-        estimated_weight = chair_data.get('estimated_weight', 4.0)  # kg
-        
+
         # 木材密度數據
         wood_densities = {
             'oak': 0.75,
-            'pine': 0.52, 
+            'pine': 0.52,
             'birch': 0.65,
             'maple': 0.70,
             'beech': 0.72,
             'generic_wood': 0.65
         }
-        
+
         wood_density = wood_densities.get(wood_type, 0.65)
-        
-        # 質量分配
+
+        # 質量分配 - 使用動態重量
         wood_mass = estimated_weight * wood_percentage
         metal_mass = estimated_weight * metal_percentage
-        
+
         # 3. 碳足跡係數
         wood_carbon_factors = {
             'oak': 0.9,
@@ -272,11 +293,11 @@ def calculate_chair_lca_fixed(chair_data: Dict) -> Dict:
             'beech': 0.87,
             'generic_wood': 0.90
         }
-        
+
         wood_carbon_factor = wood_carbon_factors.get(wood_type, 0.90)
         metal_carbon_factor = 2.8
-        
-        # 4. 生命週期階段配置（修復關鍵錯誤）
+
+        # 4. 生命週期階段配置
         life_cycle_stages = {
             'material_extraction': 0.25,
             'production': 0.45,
@@ -284,27 +305,28 @@ def calculate_chair_lca_fixed(chair_data: Dict) -> Dict:
             'use_phase': 0.15,
             'end_of_life': 0.05
         }
-        
-        # 5. 計算各階段碳排放
+
+        # 5. 計算各階段碳排放 - 基於動態重量
         wood_carbon = wood_mass * wood_carbon_factor
         metal_carbon = metal_mass * metal_carbon_factor
         total_material_carbon = wood_carbon + metal_carbon
-        
+
         # 各階段碳排放計算
         stage_emissions = {}
         for stage, factor in life_cycle_stages.items():
             stage_emissions[stage] = total_material_carbon * factor
-        
+
         total_carbon_footprint = sum(stage_emissions.values())
-        
+
         # 6. 可持續性評分計算
         sustainability_score = (
-            wood_percentage * 85 +                    # 木材可持續性基礎分
+            wood_percentage * 85 +  # 木材可持續性基礎分
             max(0, (100 - total_carbon_footprint * 15)) * 0.3 +  # 碳效率分
-            75 * 0.2                                  # 可回收性分
+            75 * 0.2  # 可回收性分
         )
+
         sustainability_score = max(0, min(100, sustainability_score))
-        
+
         # 7. 等級評定
         if sustainability_score >= 80:
             sustainability_grade = "優秀 (Excellent)"
@@ -314,8 +336,9 @@ def calculate_chair_lca_fixed(chair_data: Dict) -> Dict:
             sustainability_grade = "一般 (Fair)"
         else:
             sustainability_grade = "需改進 (Needs Improvement)"
-        
+
         carbon_efficiency = total_carbon_footprint / estimated_weight
+
         if carbon_efficiency <= 1.0:
             carbon_grade = "A+"
         elif carbon_efficiency <= 1.5:
@@ -324,11 +347,11 @@ def calculate_chair_lca_fixed(chair_data: Dict) -> Dict:
             carbon_grade = "B"
         else:
             carbon_grade = "C"
-        
+
         # 8. 環境影響評估
         water_usage = 'Low' if wood_percentage > 0.8 else 'Medium'
         biodiversity_impact = 'Positive' if wood_percentage > 0.9 else 'Neutral'
-        
+
         # 9. 生成改進建議
         recommendations = []
         if wood_percentage < 0.8:
@@ -339,11 +362,16 @@ def calculate_chair_lca_fixed(chair_data: Dict) -> Dict:
             recommendations.append("考慮使用認證可持續木材（如FSC認證）")
         if not recommendations:
             recommendations.append("當前設計已具有良好的環境表現")
-        
+
         # 構建完整的LCA結果
         lca_result = {
             'chair_id': chair_id,
             'analysis_timestamp': datetime.now().isoformat(),
+            'weight_info': {
+                'estimated_weight_kg': estimated_weight,
+                'weight_source': weight_source,
+                'weight_used_in_calculation': estimated_weight
+            },
             'materials': {
                 'wood': wood_percentage,
                 'metal': metal_percentage,
@@ -362,7 +390,7 @@ def calculate_chair_lca_fixed(chair_data: Dict) -> Dict:
             },
             'life_cycle_impact': {
                 'material_extraction_kg_co2': stage_emissions['material_extraction'],
-                'production_kg_co2': stage_emissions['production'], 
+                'production_kg_co2': stage_emissions['production'],
                 'transport_kg_co2': stage_emissions['transport'],
                 'use_phase_kg_co2': stage_emissions['use_phase'],
                 'end_of_life_kg_co2': stage_emissions['end_of_life'],
@@ -379,9 +407,9 @@ def calculate_chair_lca_fixed(chair_data: Dict) -> Dict:
                 'renewable_score': wood_percentage * 10,
                 'recycling_score': wood_percentage * 8.5 + metal_percentage * 9.5,
                 'water_impact_score': 8 if water_usage == 'Low' else 5,
-                'overall_environmental_score': (wood_percentage * 10 + 
-                                               (8 if water_usage == 'Low' else 5) + 
-                                               wood_percentage * 8.5) / 3
+                'overall_environmental_score': (wood_percentage * 10 +
+                                              (8 if water_usage == 'Low' else 5) +
+                                              wood_percentage * 8.5) / 3
             },
             'sustainability_score': {
                 'material_sustainability_score': wood_percentage * 85,
@@ -392,10 +420,10 @@ def calculate_chair_lca_fixed(chair_data: Dict) -> Dict:
             },
             'recommendations': recommendations
         }
-        
-        logger.info(f"✅ LCA分析完成: {chair_id} - 碳足跡: {total_carbon_footprint:.2f} kg CO2e, 可持續性: {sustainability_score:.1f}/100")
+
+        logger.info(f"✅ LCA分析完成: {chair_id} - 使用重量: {estimated_weight:.2f} kg - 碳足跡: {total_carbon_footprint:.2f} kg CO2e, 可持續性: {sustainability_score:.1f}/100")
         return lca_result
-        
+
     except Exception as e:
         logger.error(f"❌ LCA分析失敗: {chair_data.get('chair_id', 'Unknown')} - {e}")
         # 返回基本的失敗結果而不是拋出異常
@@ -624,7 +652,7 @@ def run_workflow_integration(workflow_config=None):
         logger.info(f"執行命令: {' '.join(cmd)}")
         
         # 執行工作流程
-        result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
+        result = subprocess.run(cmd, capture_output=False, text=True, encoding='utf-8')
         
         if result.returncode == 0:
             logger.info("✅ 3D模型處理工作流程執行成功")
@@ -741,7 +769,7 @@ def main():
         logger.info("♻️ 階段1: 椅子辨識")
         logger.info("=" * 80)
         
-        identifyChair_result = subprocess.run([yolo, "identifyChair.py"], capture_output=True, text=True)
+        identifyChair_result = subprocess.run([yolo, "identifyChair.py"], capture_output=False, text=True)
         
         if identifyChair_result.returncode == 0:
             logger.info("✅ 椅子辨識完成")
@@ -759,7 +787,7 @@ def main():
         logger.info("♻️ 階段2: 材質檢測")
         logger.info("=" * 80)
         
-        materialDetection_result = subprocess.run([mmsegmentation, "materialDetection.py"], capture_output=True, text=True)
+        materialDetection_result = subprocess.run([mmsegmentation, "materialDetection.py"], capture_output=False, text=True)
         
         if materialDetection_result.returncode == 0:
             logger.info("✅ 材質檢測完成")
@@ -777,7 +805,7 @@ def main():
         logger.info("♻️ 階段3: 3D模型生成")
         logger.info("=" * 80)
         
-        trellis_result = subprocess.run([trellis, "trellisAutoGeneration.py"], capture_output=True, text=True)
+        trellis_result = subprocess.run([trellis, "trellisAutoGeneration.py"], capture_output=False, text=True)
         
         if trellis_result.returncode == 0:
             logger.info("✅ 3D模型生成完成")
@@ -1074,12 +1102,4 @@ if __name__ == '__main__':
     
     print("🚀 開始執行完整的椅子處理流程（含修復版LCA分析）...")
     print("流程包括: 椅子辨識 → 材質檢測 → 3D模型生成 → 3D模型處理分析 → LCA生命週期評估")
-    print("=" * 80)
-    print("🔧 修復內容:")
-    print("   - 修復了 'life_cycle_stages' 錯誤")
-    print("   - 改進了錯誤處理機制")
-    print("   - 增強了木材類型支持")
-    print("   - 完善了LCA計算邏輯")
-    print("=" * 80)
-    
     main()

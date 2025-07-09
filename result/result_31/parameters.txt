@@ -1,0 +1,24 @@
+參數設定：
+data_file: ./models/chair_raw_data_v2_idmatched_revised_cleaned_aug_v2.csv
+encoding: utf-8
+output_dir: ./result
+model_type: rf
+true_weight: 4.2
+is_square: 0
+is_round: 1
+back_height: None
+back_volume: 390.0
+seat_area: 707
+seat_thickness: 3
+leg_height: 37.37
+leg_volume: 1550.0
+seat_volume: 2771.0
+test_size: 0.2
+random_state: 7693
+n_estimators: 100
+max_depth: 10
+svr_kernel: rbf
+svr_c: 1.0
+svr_epsilon: 0.1
+dpi: 300
+comparison_chairs: None
