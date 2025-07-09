@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
+import re
 
 # 添加當前目錄到Python路徑
 sys.path.append(str(Path(__file__).parent))
@@ -55,7 +56,6 @@ class WorkflowIntegration:
                 'glb_models': './3d_models',  # 包含Chair/Chair_generation_X的目錄
                 'csv_data': './models/chair_raw_data_v2_idmatched_revised_cleaned_aug_v2.csv',  # CSV數據文件
             },
-            
             # 輸出路徑配置
             'output_dirs': {
                 'obj_models': './obj_models',
@@ -64,20 +64,17 @@ class WorkflowIntegration:
                 'bootstrap_analysis': './bootstrap_analysis',
                 'enhanced_analysis': './enhanced_analysis'
             },
-            
             # 處理參數
             'processing': {
                 'skip_existing': True,  # 跳過已存在的結果
                 'generation_filter': None,  # 生成變體過濾列表，如 ['Chair_generation_1', 'Chair_generation_3']
             },
-            
             # Bootstrap分析參數
             'bootstrap': {
                 'n_iterations': 10,
                 'ci_level': 0.95,
                 'skip_execution': False,  # 是否跳過執行，直接分析現有結果
             },
-            
             # 模型分析參數
             'analysis': {
                 'test_size': 0.2,
@@ -86,7 +83,6 @@ class WorkflowIntegration:
                 'max_depth': 10,
                 'model_type': 'all',  # 'rf', 'xgb', 'mlr', 'svr', 'all'
             },
-            
             # 椅子參數（用於預測）
             'chair_params': {
                 'is_square': 0,
@@ -95,7 +91,6 @@ class WorkflowIntegration:
                 'seat_thickness': 3,
                 'true_weight': 4.2
             },
-            
             # 啟用的步驟
             'enabled_steps': [1, 2, 3, 4, 5]  # 可以選擇性啟用步驟
         }
@@ -104,11 +99,11 @@ class WorkflowIntegration:
             try:
                 with open(config_file, 'r', encoding='utf-8') as f:
                     user_config = json.load(f)
-                    # 深度合併配置
-                    self._deep_update(default_config, user_config)
+                # 深度合併配置
+                self._deep_update(default_config, user_config)
                 logger.info(f"✅ 已載入配置文件: {config_file}")
             except Exception as e:
-                logger.warning(f"⚠️  載入配置文件失敗，使用默認配置: {e}")
+                logger.warning(f"⚠️ 載入配置文件失敗，使用默認配置: {e}")
         
         return default_config
     
@@ -175,22 +170,13 @@ class WorkflowIntegration:
         
         try:
             from calculate_carbon.modification_obj import GeometryAnalyzer
-            # from calculate_carbon.chair_split_structure import PerfectChairSegmenter
-
+            
             analyzer = GeometryAnalyzer()
             result = analyzer.process_chair_models(
                 self.config['output_dirs']['obj_models'],
                 self.config['output_dirs']['modified_obj']
             )
-            # 建立分割器
-            # segmenter = PerfectChairSegmenter(
-            #     input_path=self.config['output_dirs']['modified_obj'],
-            #     layer_height=0.002,
-            #     eps=0.1,
-            #     min_samples=10
-            # )
-            # result = segmenter.segment()
-
+            
             step_time = time.time() - step_start_time
             self.timing_records['step_2'] = step_time
             
@@ -235,62 +221,6 @@ class WorkflowIntegration:
             logger.error(f"❌ 步驟3執行異常: {e}")
             return {'success': False, 'error': str(e)}
     
-    # def step_4_bootstrap_analysis(self) -> Dict:
-    #     """步驟4: Bootstrap統計分析"""
-    #     logger.info("=" * 80)
-    #     logger.info("🔄 步驟4: Bootstrap統計分析")
-    #     logger.info("=" * 80)
-        
-    #     step_start_time = time.time()
-        
-    #     try:
-    #         # 檢查CSV數據文件
-    #         csv_file = self.config['input_dirs']['csv_data']
-    #         print(csv_file)
-    #         logger.info(csv_file)
-    #         if not Path(csv_file).exists():
-    #             logger.error(f"CSV數據文件不存在: {csv_file}")
-    #             return {'success': False, 'error': f'CSV file not found: {csv_file}'}
-            
-    #         # 導入並執行Bootstrap分析
-    #         from calculate_carbon.bootstrapV2 import main as bootstrap_main
-            
-    #         # 保存原始argv並設置新的
-    #         import sys
-    #         original_argv = sys.argv.copy()
-            
-    #         try:
-    #             # 設置模擬的命令行參數
-    #             bootstrap_config = self.config['bootstrap']
-    #             analysis_config = self.config['analysis']
-                
-    #             sys.argv = [
-    #                 './calculate_carbon/bootstrapV2.py',
-    #                 '--py_path', 'calculate_carbon/enhanced_rf_analysis.py',
-    #                 '--data_file', csv_file,
-    #                 '--n_iterations', str(bootstrap_config['n_iterations']),
-    #                 '--result_dir', './enhanced_rf_result',
-    #                 '--output_dir', self.config['output_dirs']['bootstrap_analysis'],
-    #                 '--model_type', analysis_config['model_type'],
-    #                 '--min_num', '10',
-    #                 '--ci_level', str(bootstrap_config['ci_level'])
-    #             ]
-                
-    #             # 直接調用main函數
-    #             bootstrap_main()
-                
-    #             step_time = time.time() - step_start_time
-    #             self.timing_records['step_4'] = step_time
-                
-    #             logger.info(f"✅ 步驟4完成: Bootstrap分析 (耗時: {step_time:.2f}秒)")
-    #             return {'success': True, 'output_dir': self.config['output_dirs']['bootstrap_analysis']}
-                
-    #         finally:
-    #             # 恢復原始argv
-    #             sys.argv = original_argv
-    #     except Exception as e:
-    #         logger.error(f"❌ 步驟4執行異常: {e}")
-    #         return {'success': False, 'error': str(e)}
     def step_4_bootstrap_analysis(self) -> Dict:
         """步驟4: 優化的Bootstrap統計分析"""
         logger.info("=" * 80)
@@ -371,16 +301,16 @@ class WorkflowIntegration:
             logger.info(f"📊 平均每次迭代: {step_time/n_iterations:.2f}秒")
             
             return {
-                'success': True, 
+                'success': True,
                 'output_dir': self.config['output_dirs']['bootstrap_analysis'],
                 'iterations_completed': len(results),
                 'total_time': step_time
             }
-                    
+            
         except Exception as e:
             logger.error(f"❌ 步驟4執行異常: {e}")
             return {'success': False, 'error': str(e)}
-
+    
     def _run_parallel_bootstrap(self, analysis_args: Dict, n_iterations: int, n_workers: int) -> List:
         """並行執行Bootstrap分析"""
         from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -402,7 +332,7 @@ class WorkflowIntegration:
         with ProcessPoolExecutor(max_workers=n_workers) as executor:
             # 提交所有任務
             future_to_iteration = {
-                executor.submit(self._run_single_iteration, task_args, iteration): iteration 
+                executor.submit(self._run_single_iteration, task_args, iteration): iteration
                 for task_args, iteration in tasks
             }
             
@@ -425,7 +355,7 @@ class WorkflowIntegration:
                     completed += 1
         
         return successful_runs
-
+    
     def _run_optimized_sequential_bootstrap(self, analysis_args: Dict, n_iterations: int) -> List:
         """優化的順序執行Bootstrap分析"""
         logger.info(f"🔄 順序執行 {n_iterations} 次迭代 (已優化)...")
@@ -450,7 +380,7 @@ class WorkflowIntegration:
                 logger.warning(f"⚠️ 迭代 {i} 執行失敗: {e}")
         
         return successful_runs
-
+    
     def _run_single_iteration(self, args: Dict, iteration: int) -> bool:
         """執行單次Bootstrap迭代（優化版本）"""
         import subprocess
@@ -463,30 +393,16 @@ class WorkflowIntegration:
                 '--data_file', args['data_file'],
                 '--encoding', args['encoding'],
                 '--model_type', 'rf',
-                # '--model_type', args['model_type'],
                 '--output_dir', args['output_dir'],
-                # '--random_state', str(args['random_state']),
                 '--n_iterations', '1',  # 每次只執行一個迭代
                 '--min_num', str(iteration)  # 使用迭代次數作為結果文件夾編號
             ]
             
-            # # 添加椅子參數
-            # if 'is_square' in args:
-            #     cmd.extend(['--is_square', str(args['is_square'])])
-            # if 'is_round' in args:
-            #     cmd.extend(['--is_round', str(args['is_round'])])
-            # if 'seat_area' in args:
-            #     cmd.extend(['--seat_area', str(args['seat_area'])])
-            # if 'seat_thickness' in args:
-            #     cmd.extend(['--seat_thickness', str(args['seat_thickness'])])
-            # if 'true_weight' in args:
-            #     cmd.extend(['--true_weight', str(args['true_weight'])])
-            
             # 執行命令，設置超時避免卡死
             result = subprocess.run(
-                cmd, 
-                check=True, 
-                capture_output=False, 
+                cmd,
+                check=True,
+                capture_output=False,
                 text=True,
                 timeout=300  # 5分鐘超時
             )
@@ -502,12 +418,13 @@ class WorkflowIntegration:
         except Exception as e:
             logger.warning(f"⚠️ 迭代 {iteration} 執行異常: {e}")
             return False
-
+    
     def step_5_enhanced_analysis(self) -> Dict:
-        """步驟5: 增強隨機森林分析 - 修復預測重量覆蓋問題"""
+        """步驟5: 增強隨機森林分析 - 修復預測重量提取"""
         logger.info("=" * 80)
         logger.info("🔄 步驟5: 增強隨機森林分析")
         logger.info("=" * 80)
+        
         step_start_time = time.time()
         
         try:
@@ -516,11 +433,11 @@ class WorkflowIntegration:
             if not Path(csv_file).exists():
                 logger.error(f"CSV數據文件不存在: {csv_file}")
                 return {'success': False, 'error': f'CSV file not found: {csv_file}'}
-
+            
             # 準備參數
             analysis_config = self.config['analysis']
             chair_config = self.config['chair_params']
-
+            
             # 構建參數對象
             from types import SimpleNamespace
             args = SimpleNamespace(
@@ -548,13 +465,14 @@ class WorkflowIntegration:
                 dpi=300,
                 comparison_chairs=None
             )
-
+            
             # 導入並執行Enhanced分析
             from calculate_carbon.enhanced_rf_analysis import main as enhanced_main
-
+            
             # 保存原始argv並設置新的
             import sys
             original_argv = sys.argv.copy()
+            
             try:
                 # 設置模擬的命令行參數
                 sys.argv = ['enhanced_rf_analysis_enhanced.py']
@@ -602,24 +520,11 @@ class WorkflowIntegration:
                 
                 # 方法2: 檢查輸出目錄中的結果文件
                 if predicted_weight is None:
-                    output_dir = Path(self.config['output_dirs']['enhanced_analysis'])
-                    if output_dir.exists():
-                        # 查找最新的結果文件
-                        result_files = list(output_dir.glob("**/detailed_analysis_results.txt"))
-                        if result_files:
-                            latest_file = max(result_files, key=lambda x: x.stat().st_mtime)
-                            try:
-                                with open(latest_file, 'r', encoding='utf-8') as f:
-                                    content = f.read()
-                                    # 使用正則表達式提取預測重量
-                                    import re
-                                    weight_pattern = r'新椅子預測重量[：:]\s*(\d+\.?\d*)\s*kg'
-                                    match = re.search(weight_pattern, content)
-                                    if match:
-                                        predicted_weight = float(match.group(1))
-                                        logger.info(f"✅ 從結果文件獲取重量: {predicted_weight:.2f} kg")
-                            except Exception as e:
-                                logger.warning(f"⚠️ 讀取結果文件失敗: {e}")
+                    predicted_weight = self._extract_weight_from_results()
+                
+                # 方法3: 計算多次預測的平均值
+                if predicted_weight is None:
+                    predicted_weight = self._calculate_average_predictions()
                 
                 # 如果仍然沒有找到預測重量，使用椅子參數中的重量
                 if predicted_weight is None:
@@ -633,7 +538,7 @@ class WorkflowIntegration:
                 self.timing_records['step_5'] = step_time
                 
                 return {
-                    'success': True, 
+                    'success': True,
                     'result': result,
                     'predicted_weight': predicted_weight,  # 確保保存正確的預測重量
                     'weight_source': 'enhanced_rf_analysis',
@@ -643,12 +548,87 @@ class WorkflowIntegration:
             finally:
                 # 恢復原始argv
                 sys.argv = original_argv
-
+                
         except Exception as e:
             logger.error(f"❌ 步驟5執行異常: {e}")
             return {'success': False, 'error': str(e)}
-
-
+    
+    def _extract_weight_from_results(self) -> Optional[float]:
+        """從結果文件中提取預測重量"""
+        try:
+            output_dir = Path(self.config['output_dirs']['enhanced_analysis'])
+            if output_dir.exists():
+                # 查找最新的結果文件
+                result_files = list(output_dir.glob("**/detailed_analysis_results.txt"))
+                if result_files:
+                    latest_file = max(result_files, key=lambda x: x.stat().st_mtime)
+                    try:
+                        with open(latest_file, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                        
+                        # 使用正則表達式提取預測重量
+                        weight_pattern = r'新椅子預測重量[：:]\s*(\d+\.?\d*)\s*kg'
+                        match = re.search(weight_pattern, content)
+                        if match:
+                            weight = float(match.group(1))
+                            logger.info(f"✅ 從結果文件獲取重量: {weight:.2f} kg")
+                            return weight
+                    except Exception as e:
+                        logger.warning(f"⚠️ 讀取結果文件失敗: {e}")
+            return None
+        except Exception as e:
+            logger.warning(f"⚠️ 提取結果文件重量失敗: {e}")
+            return None
+    
+    def _calculate_average_predictions(self) -> Optional[float]:
+        """計算多次預測結果的平均值"""
+        try:
+            predictions = []
+            
+            # 掃描所有結果目錄
+            for i in range(1, 11):  # result_1 到 result_10
+                result_dir = Path(f"./enhanced_rf_result/result_{i}")
+                if result_dir.exists():
+                    # 讀取結果文件
+                    result_file = result_dir / "detailed_analysis_results.txt"
+                    if result_file.exists():
+                        weight = self._extract_weight_from_file(result_file)
+                        if weight:
+                            predictions.append(weight)
+            
+            if predictions:
+                avg_weight = sum(predictions) / len(predictions)
+                logger.info(f"✅ 計算平均預測重量: {avg_weight:.2f} kg (基於 {len(predictions)} 次預測)")
+                return avg_weight
+            
+            return None
+        except Exception as e:
+            logger.warning(f"⚠️ 計算平均預測重量失敗: {e}")
+            return None
+    
+    def _extract_weight_from_file(self, file_path: Path) -> Optional[float]:
+        """從結果文件中提取預測重量"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 使用正則表達式提取重量
+            patterns = [
+                r'新椅子預測重量[：:]\s*(\d+\.?\d*)\s*kg',
+                r'預測重量[：:]\s*(\d+\.?\d*)\s*kg',
+                r'Random Forest.*?(\d+\.?\d*)\s*kg'
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, content)
+                if match:
+                    return float(match.group(1))
+            
+        except Exception as e:
+            logger.warning(f"⚠️ 讀取文件失敗: {file_path} - {e}")
+        
+        return None
+    
     def run_workflow(self, start_step: int = 1, end_step: int = 5) -> Dict:
         """
         運行完整工作流程
@@ -664,8 +644,10 @@ class WorkflowIntegration:
         logger.info("=" * 100)
         logger.info(f"開始時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"處理步驟: {start_step} - {end_step}")
+        
         if self.config['processing']['generation_filter']:
             logger.info(f"生成變體過濾: {self.config['processing']['generation_filter']}")
+        
         logger.info("=" * 100)
         
         # 創建必要目錄
@@ -771,19 +753,19 @@ class WorkflowIntegration:
         self.print_workflow_summary(final_result)
         
         return final_result
-
+    
     def save_workflow_report(self, result: Dict):
         """保存工作流程報告"""
         try:
             # 創建報告目錄
             report_dir = Path('workflow_reports')
             report_dir.mkdir(exist_ok=True)
-
+            
             # 生成報告文件名
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             json_report_file = report_dir / f'workflow_report_{timestamp}.json'
             text_report_file = report_dir / f'workflow_summary_{timestamp}.txt'
-
+            
             # 提取預測重量
             predicted_weights = {}
             final_predicted_weight = None
@@ -793,11 +775,11 @@ class WorkflowIntegration:
                     predicted_weights[f'step_{step_num}'] = step_result['predicted_weight']
                     if step_num == 5:  # 步驟5的預測重量優先
                         final_predicted_weight = step_result['predicted_weight']
-
+            
             # 如果步驟5沒有預測重量，使用最後一個有預測重量的步驟
             if final_predicted_weight is None and predicted_weights:
                 final_predicted_weight = list(predicted_weights.values())[-1]
-
+            
             # 創建可序列化的結果副本
             serializable_result = {}
             for key, value in result.items():
@@ -812,16 +794,16 @@ class WorkflowIntegration:
                         }
                 else:
                     serializable_result[key] = value
-
+            
             # 添加預測重量摘要
             if predicted_weights:
                 serializable_result['predicted_weights'] = predicted_weights
                 serializable_result['final_predicted_weight'] = final_predicted_weight
-
+            
             # 保存JSON格式報告
             with open(json_report_file, 'w', encoding='utf-8') as f:
                 json.dump(serializable_result, f, indent=2, ensure_ascii=False)
-
+            
             # 保存文字格式摘要
             with open(text_report_file, 'w', encoding='utf-8') as f:
                 f.write("椅子3D模型處理與分析工作流程報告\n")
@@ -842,32 +824,33 @@ class WorkflowIntegration:
                     step_name = self.steps.get(step_num, {}).get('name', f'步驟{step_num}')
                     step_time = self.timing_records.get(f'step_{step_num}', 0)
                     status = "✅ 成功" if step_result.get('success', False) else "❌ 失敗"
+                    
                     f.write(f"步驟{step_num}: {step_name}\n")
-                    f.write(f" 狀態: {status}\n")
-                    f.write(f" 耗時: {step_time:.2f} 秒\n")
+                    f.write(f"  狀態: {status}\n")
+                    f.write(f"  耗時: {step_time:.2f} 秒\n")
                     
                     if 'predicted_weight' in step_result:
-                        f.write(f" 預測重量: {step_result['predicted_weight']:.2f} kg\n")
+                        f.write(f"  預測重量: {step_result['predicted_weight']:.2f} kg\n")
                     
                     if not step_result.get('success', False) and step_result.get('error'):
-                        f.write(f" 錯誤: {step_result['error']}\n")
+                        f.write(f"  錯誤: {step_result['error']}\n")
+                    
                     f.write("\n")
-
+                
                 f.write("配置信息:\n")
                 f.write("-" * 30 + "\n")
                 f.write(f"GLB模型目錄: {self.config['input_dirs']['glb_models']}\n")
                 f.write(f"CSV數據文件: {self.config['input_dirs']['csv_data']}\n")
                 f.write(f"Bootstrap迭代次數: {self.config['bootstrap']['n_iterations']}\n")
                 f.write(f"模型類型: {self.config['analysis']['model_type']}\n")
-
+            
             logger.info(f"✅ 工作流程報告已保存:")
-            logger.info(f" - JSON報告: {json_report_file}")
-            logger.info(f" - 文字摘要: {text_report_file}")
-
+            logger.info(f"  - JSON報告: {json_report_file}")
+            logger.info(f"  - 文字摘要: {text_report_file}")
+            
         except Exception as e:
             logger.error(f"❌ 保存工作流程報告失敗: {e}")
-
-
+    
     def print_workflow_summary(self, result: Dict):
         """打印工作流程總結"""
         logger.info("\n" + "🎉 工作流程執行完成！")
@@ -888,11 +871,10 @@ class WorkflowIntegration:
             step_name = self.steps.get(step_num, {}).get('name', f'步驟{step_num}')
             step_time = self.timing_records.get(f'step_{step_num}', 0)
             status = "✅" if step_result.get('success', False) else "❌"
-            
             logger.info(f"  {status} 步驟{step_num}: {step_name} ({step_time:.2f}秒)")
             
             if not step_result.get('success', False) and step_result.get('error'):
-                logger.info(f"      錯誤: {step_result['error']}")
+                logger.info(f"    錯誤: {step_result['error']}")
         
         # 輸出目錄信息
         logger.info("\n📁 輸出目錄:")
