@@ -1,0 +1,76 @@
+{
+  "timestamp": "2025-07-09 23:20:57",
+  "base_input_directory": "3d_models",
+  "base_output_directory": "obj_models",
+  "chair_main_directory": "3d_models/Chair",
+  "processed_generations": 5,
+  "total_converted_files": 5,
+  "total_failed_files": 0,
+  "generation_results": {
+    "Chair_generation_1": {
+      "success": true,
+      "total_files": 1,
+      "converted_files": [
+        {
+          "input_file": "3d_models/Chair/Chair_generation_1/Chair_generation_1.glb",
+          "output_file": "obj_models/Chair/Chair_generation_1/Chair_generation_1.obj",
+          "relative_path": "Chair_generation_1.glb"
+        }
+      ],
+      "failed_files": [],
+      "report_file": "obj_models/Chair/Chair_generation_1/conversion_report.json"
+    },
+    "Chair_generation_2": {
+      "success": true,
+      "total_files": 1,
+      "converted_files": [
+        {
+          "input_file": "3d_models/Chair/Chair_generation_2/Chair_generation_2.glb",
+          "output_file": "obj_models/Chair/Chair_generation_2/Chair_generation_2.obj",
+          "relative_path": "Chair_generation_2.glb"
+        }
+      ],
+      "failed_files": [],
+      "report_file": "obj_models/Chair/Chair_generation_2/conversion_report.json"
+    },
+    "Chair_generation_3": {
+      "success": true,
+      "total_files": 1,
+      "converted_files": [
+        {
+          "input_file": "3d_models/Chair/Chair_generation_3/Chair_generation_3.glb",
+          "output_file": "obj_models/Chair/Chair_generation_3/Chair_generation_3.obj",
+          "relative_path": "Chair_generation_3.glb"
+        }
+      ],
+      "failed_files": [],
+      "report_file": "obj_models/Chair/Chair_generation_3/conversion_report.json"
+    },
+    "Chair_generation_4": {
+      "success": true,
+      "total_files": 1,
+      "converted_files": [
+        {
+          "input_file": "3d_models/Chair/Chair_generation_4/Chair_generation_4.glb",
+          "output_file": "obj_models/Chair/Chair_generation_4/Chair_generation_4.obj",
+          "relative_path": "Chair_generation_4.glb"
+        }
+      ],
+      "failed_files": [],
+      "report_file": "obj_models/Chair/Chair_generation_4/conversion_report.json"
+    },
+    "Chair_generation_5": {
+      "success": true,
+      "total_files": 1,
+      "converted_files": [
+        {
+          "input_file": "3d_models/Chair/Chair_generation_5/Chair_generation_5.glb",
+          "output_file": "obj_models/Chair/Chair_generation_5/Chair_generation_5.obj",
+          "relative_path": "Chair_generation_5.glb"
+        }
+      ],
+      "failed_files": [],
+      "report_file": "obj_models/Chair/Chair_generation_5/conversion_report.json"
+    }
+  }
+}

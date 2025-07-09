@@ -132,8 +132,8 @@ class OpenLCACalculator:
                 row_data = {
                     'chair_id': chair_id,
                     'wood_product': wood_mass,  # 木製品產出
-                    'furniture_wooden': wood_mass * 1.1,  # 木製家具輸入（考慮加工損耗）
-                    'waste_wood': wood_mass * 0.05,  # 木材廢料
+                    'furniture_wooden': wood_mass * 1.2,  # 木製家具輸入（考慮加工損耗）
+                    'waste_wood': wood_mass * 1.2 - wood_mass,  # 木材廢料
                     'transport': wood_mass * 0.1,  # 運輸
                     'electricity': wood_mass * 0.5,  # 電力消耗
                     'estimated_weight': estimated_weight,

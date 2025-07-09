@@ -74,39 +74,39 @@ def collect_chair_data_for_lca() -> List[Dict]:
     
     try:
         # 1. 從材料分析結果收集數據
-        material_analysis_dir = Path("./material_analysis")
-        if material_analysis_dir.exists():
-            logger.info("📊 發現材料分析結果，正在收集...")
+        # material_analysis_dir = Path("./material_analysis")
+        # if material_analysis_dir.exists():
+        #     logger.info("📊 發現材料分析結果，正在收集...")
             
-            # 查找材料分析報告
-            csv_files = list(material_analysis_dir.glob("*.csv"))
-            json_files = list(material_analysis_dir.glob("*.json"))
+        #     # 查找材料分析報告
+        #     csv_files = list(material_analysis_dir.glob("*.csv"))
+        #     json_files = list(material_analysis_dir.glob("*.json"))
             
-            if csv_files or json_files:
-                logger.info(f"找到 {len(csv_files)} 個CSV文件和 {len(json_files)} 個JSON文件")
+        #     if csv_files or json_files:
+        #         logger.info(f"找到 {len(csv_files)} 個CSV文件和 {len(json_files)} 個JSON文件")
                 
-                # 模擬從材料分析中提取木材比例
-                for i, csv_file in enumerate(csv_files[:5]):  # 限制處理前5個文件
-                    try:
-                        chair_data = {
-                            'chair_id': f'Chair_{i+1:03d}',
-                            'source_file': str(csv_file),
-                            'material_analysis': {
-                                'wood_percentage': 85 + (i * 2),  # 模擬木材比例 85-93%
-                                'has_material_detection': True
-                            },
-                            'seat_area': 400 + (i * 20),     # 模擬座椅面積
-                            'seat_thickness': 2.5 + (i * 0.2),  # 模擬座椅厚度
-                            'geometry_analysis': {
-                                'bounding_box_volume': 2500 + (i * 300)  # 模擬體積
-                            },
-                            'estimated_weight': 3.5 + (i * 0.5),  # 模擬重量
-                            'wood_type': ['oak', 'pine', 'birch', 'maple', 'beech'][i % 5]  # 輪換木材類型
-                        }
-                        chairs_data.append(chair_data)
-                        logger.info(f"  ✅ 收集椅子數據: {chair_data['chair_id']}")
-                    except Exception as e:
-                        logger.warning(f"  ⚠️ 處理文件 {csv_file} 時出錯: {e}")
+        #         # 模擬從材料分析中提取木材比例
+        #         for i, csv_file in enumerate(csv_files[:5]):  # 限制處理前5個文件
+        #             try:
+        #                 chair_data = {
+        #                     'chair_id': f'Chair_{i+1:03d}',
+        #                     'source_file': str(csv_file),
+        #                     'material_analysis': {
+        #                         'wood_percentage': 85 + (i * 2),  # 模擬木材比例 85-93%
+        #                         'has_material_detection': True
+        #                     },
+        #                     'seat_area': 400 + (i * 20),     # 模擬座椅面積
+        #                     'seat_thickness': 2.5 + (i * 0.2),  # 模擬座椅厚度
+        #                     'geometry_analysis': {
+        #                         'bounding_box_volume': 2500 + (i * 300)  # 模擬體積
+        #                     },
+        #                     'estimated_weight': 3.5 + (i * 0.5),  # 模擬重量
+        #                     'wood_type': ['oak', 'pine', 'birch', 'maple', 'beech'][i % 5]  # 輪換木材類型
+        #                 }
+        #                 chairs_data.append(chair_data)
+        #                 logger.info(f"  ✅ 收集椅子數據: {chair_data['chair_id']}")
+        #             except Exception as e:
+        #                 logger.warning(f"  ⚠️ 處理文件 {csv_file} 時出錯: {e}")
         
         # 2. 從3D模型分析收集數據
         models_dir = Path("./3d_models")
@@ -465,7 +465,7 @@ def run_enhanced_lca_analysis(chairs_data: List[Dict]) -> Dict:
             'average_sustainability_score': np.mean(sustainability_scores) if sustainability_scores else 0,
             'min_sustainability_score': np.min(sustainability_scores) if sustainability_scores else 0,
             'max_sustainability_score': np.max(sustainability_scores) if sustainability_scores else 0,
-            'average_wood_percentage': np.mean(wood_percentages) if wood_percentages else 0,
+            'average_wood_percentage': np.mean(wood_percentages) if wood_percentages else 0,  # 確保這個字段存在
             'material_distribution': {},
             'sustainability_grades': {}
         }
@@ -646,7 +646,7 @@ def run_workflow_integration(workflow_config=None):
         return False
 
 def generate_comprehensive_report(workflow_results: Dict, lca_results: Dict):
-    """生成綜合分析報告"""
+    """生成綜合分析報告 - 修復版"""
     logger.info("📊 生成綜合分析報告...")
     
     try:
@@ -656,16 +656,40 @@ def generate_comprehensive_report(workflow_results: Dict, lca_results: Dict):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         report_file = reports_dir / f"comprehensive_report_{timestamp}.json"
         
+        # 處理 lca_results，移除不可序列化的 DataFrame
+        lca_results_serializable = {}
+        for key, value in lca_results.items():
+            if hasattr(value, 'to_dict'):  # 檢查是否為 DataFrame
+                lca_results_serializable[key] = value.to_dict('records')
+            elif hasattr(value, '__dict__') and not isinstance(value, (str, int, float, bool, list, dict, type(None))):
+                # 其他不可序列化的對象
+                lca_results_serializable[key] = str(value)
+            else:
+                lca_results_serializable[key] = value
+        
+        # 特別處理 detailed_results 中可能的 DataFrame
+        if 'detailed_results' in lca_results_serializable:
+            detailed_results = lca_results_serializable['detailed_results']
+            if isinstance(detailed_results, list):
+                for i, result in enumerate(detailed_results):
+                    if isinstance(result, dict):
+                        for result_key, result_value in result.items():
+                            if hasattr(result_value, 'to_dict'):  # DataFrame
+                                detailed_results[i][result_key] = result_value.to_dict('records')
+                            elif hasattr(result_value, '__dict__') and not isinstance(result_value, (str, int, float, bool, list, dict, type(None))):
+                                detailed_results[i][result_key] = str(result_value)
+        
         comprehensive_report = {
             'report_timestamp': datetime.now().isoformat(),
             'workflow_results': workflow_results,
-            'lca_analysis': lca_results,
+            'lca_analysis': lca_results_serializable,
             'summary': {
                 'workflow_success': workflow_results.get('success', False),
                 'lca_success': lca_results.get('success', False),
                 'total_chairs_analyzed': lca_results.get('summary', {}).get('successful_analysis', 0),
                 'average_carbon_footprint': lca_results.get('summary', {}).get('average_carbon_footprint', 0),
-                'average_sustainability_score': lca_results.get('summary', {}).get('average_sustainability_score', 0)
+                'average_sustainability_score': lca_results.get('summary', {}).get('average_sustainability_score', 0),
+                'average_wood_percentage': lca_results.get('summary', {}).get('average_wood_percentage', 0)  # 添加預設值
             },
             'recommendations': []
         }
@@ -691,15 +715,16 @@ def generate_comprehensive_report(workflow_results: Dict, lca_results: Dict):
                     "椅子設計具有良好的環境表現，繼續保持"
                 )
         
-        # 保存報告
+        # 保存報告，使用自定義序列化處理
         with open(report_file, 'w', encoding='utf-8') as f:
-            json.dump(comprehensive_report, f, indent=2, ensure_ascii=False)
+            json.dump(comprehensive_report, f, indent=2, ensure_ascii=False, default=str)
         
-        logger.info(f"綜合報告已保存: {report_file}")
+        logger.info(f"✅ 綜合報告已保存: {report_file}")
         return str(report_file)
         
     except Exception as e:
         logger.error(f"❌ 生成綜合報告時發生錯誤: {e}")
+        logger.error(f"錯誤詳情: {type(e).__name__}: {str(e)}")
         return None
 
 def main():
@@ -833,7 +858,9 @@ def main():
                 if summary['successful_analysis'] > 0:
                     logger.info(f"🌱 平均可持續性評分: {summary['average_sustainability_score']:.1f}/100")
                     logger.info(f"♻️ 平均碳足跡: {summary['average_carbon_footprint']:.2f} kg CO2e")
-                    logger.info(f"🌳 平均木材含量: {summary['average_wood_percentage']:.1f}%")
+                    # 安全地訪問 average_wood_percentage
+                    wood_percentage = summary.get('average_wood_percentage', 0)
+                    logger.info(f"🌳 平均木材含量: {wood_percentage:.1f}%")
             else:
                 logger.error("❌ LCA分析失敗")
                 logger.error(f"錯誤信息: {lca_results.get('error', 'Unknown error')}")
@@ -906,11 +933,21 @@ def main():
         if summary['successful_analysis'] > 0:
             logger.info(f"   - 平均碳足跡: {summary['average_carbon_footprint']:.2f} kg CO2e")
             logger.info(f"   - 平均可持續性評分: {summary['average_sustainability_score']:.1f}/100")
-            logger.info(f"   - 平均木材含量: {summary['average_wood_percentage']:.1f}%")
+            # 安全地訪問 average_wood_percentage
+            wood_percentage = summary.get('average_wood_percentage', 0)
+            logger.info(f"   - 平均木材含量: {wood_percentage:.1f}%")
         
         if 'report_files' in lca_results:
-            logger.info(f"   - LCA詳細報告: {lca_results['report_files']['json_report']}")
-            logger.info(f"   - LCA摘要報告: {lca_results['report_files']['text_summary']}")
+            report_files = lca_results['report_files']
+            if 'json_report' in report_files:
+                logger.info(f"   - LCA詳細報告: {report_files['json_report']}")
+            if 'text_summary' in report_files:
+                logger.info(f"   - LCA摘要報告: {report_files['text_summary']}")
+            # 處理 OpenLCA 結果的不同鍵名
+            if 'csv_report' in report_files:
+                logger.info(f"   - LCA CSV報告: {report_files['csv_report']}")
+            if 'excel_report' in report_files:
+                logger.info(f"   - LCA Excel報告: {report_files['excel_report']}")
 
 def run_openlca_analysis(chairs_data: List[Dict]) -> Dict:
     """使用OpenLCA進行專業LCA分析 - 修改版"""

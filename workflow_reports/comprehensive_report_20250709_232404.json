@@ -1,0 +1,144 @@
+{
+  "report_timestamp": "2025-07-09T23:24:04.195225",
+  "workflow_results": {
+    "success": true
+  },
+  "lca_analysis": {
+    "success": true,
+    "summary": {
+      "total_chairs": 3,
+      "successful_analysis": 3,
+      "failed_analysis": 0,
+      "average_carbon_footprint": 10.634350159178247,
+      "average_sustainability_score": 75,
+      "calculation_method": "OpenLCA_Professional",
+      "processing_time": 71.92936396598816
+    },
+    "detailed_results": [
+      {
+        "chair_id": "Chair_Chair_generation_2",
+        "analysis_timestamp": "2025-07-09T23:24:04.193252",
+        "calculation_method": "OpenLCA_Professional",
+        "materials": {
+          "wood_percentage": 0.9,
+          "has_material_detection": true
+        },
+        "estimated_weight": 4.0,
+        "carbon_footprint": {
+          "total_carbon_kg_co2": 10.634350159178247,
+          "carbon_efficiency_kg_co2_per_kg": 2.6585875397945617,
+          "source": "OpenLCA_Database"
+        },
+        "sustainability_score": {
+          "overall_sustainability_score": 75,
+          "sustainability_grade": "Good"
+        },
+        "openlca_results": {
+          "chair_id": "Chair_Chair_generation_2",
+          "row_index": 1,
+          "wood_product": 3.78,
+          "furniture_wooden": 4.5360000000000005,
+          "waste_wood": 0.7560000000000002,
+          "transport": 0.378,
+          "electricity": 1.89,
+          "climate change - global warming potential (GWP100) (kg CO2-Eq)": 10.634350159178247,
+          "climate change - global temperature change potential (GTP100) (kg CO2-Eq)": 9.417832736901625,
+          "climate change - global temperature change potential (GTP20) (kg CO2-Eq)": 12.561063756415349,
+          "climate change - global warming potential (GWP20) (kg CO2-Eq)": 13.431120793265878
+        },
+        "success": true
+      },
+      {
+        "chair_id": "Chair_Chair_generation_3",
+        "analysis_timestamp": "2025-07-09T23:24:04.193527",
+        "calculation_method": "OpenLCA_Professional",
+        "materials": {
+          "wood_percentage": 0.9,
+          "has_material_detection": true
+        },
+        "estimated_weight": 4.0,
+        "carbon_footprint": {
+          "total_carbon_kg_co2": 10.634350159178247,
+          "carbon_efficiency_kg_co2_per_kg": 2.6585875397945617,
+          "source": "OpenLCA_Database"
+        },
+        "sustainability_score": {
+          "overall_sustainability_score": 75,
+          "sustainability_grade": "Good"
+        },
+        "openlca_results": {
+          "chair_id": "Chair_Chair_generation_3",
+          "row_index": 2,
+          "wood_product": 3.78,
+          "furniture_wooden": 4.5360000000000005,
+          "waste_wood": 0.7560000000000002,
+          "transport": 0.378,
+          "electricity": 1.89,
+          "climate change - global warming potential (GWP100) (kg CO2-Eq)": 10.634350159178247,
+          "climate change - global temperature change potential (GTP100) (kg CO2-Eq)": 9.417832736901625,
+          "climate change - global temperature change potential (GTP20) (kg CO2-Eq)": 12.561063756415349,
+          "climate change - global warming potential (GWP20) (kg CO2-Eq)": 13.431120793265878
+        },
+        "success": true
+      },
+      {
+        "chair_id": "Chair_Chair_generation_4",
+        "analysis_timestamp": "2025-07-09T23:24:04.193729",
+        "calculation_method": "OpenLCA_Professional",
+        "materials": {
+          "wood_percentage": 0.9,
+          "has_material_detection": true
+        },
+        "estimated_weight": 4.0,
+        "carbon_footprint": {
+          "total_carbon_kg_co2": 10.634350159178247,
+          "carbon_efficiency_kg_co2_per_kg": 2.6585875397945617,
+          "source": "OpenLCA_Database"
+        },
+        "sustainability_score": {
+          "overall_sustainability_score": 75,
+          "sustainability_grade": "Good"
+        },
+        "openlca_results": {
+          "chair_id": "Chair_Chair_generation_4",
+          "row_index": 3,
+          "wood_product": 3.78,
+          "furniture_wooden": 4.5360000000000005,
+          "waste_wood": 0.7560000000000002,
+          "transport": 0.378,
+          "electricity": 1.89,
+          "climate change - global warming potential (GWP100) (kg CO2-Eq)": 10.634350159178247,
+          "climate change - global temperature change potential (GTP100) (kg CO2-Eq)": 9.417832736901625,
+          "climate change - global temperature change potential (GTP20) (kg CO2-Eq)": 12.561063756415349,
+          "climate change - global warming potential (GWP20) (kg CO2-Eq)": 13.431120793265878
+        },
+        "success": true
+      }
+    ],
+    "report_files": {
+      "csv_report": "workflow_reports/openlca_results/openlca_batch_results_20250709_232403.csv",
+      "excel_report": "workflow_reports/openlca_results/openlca_batch_results_20250709_232403.xlsx"
+    },
+    "openlca_raw_results": {
+      "success": true,
+      "total_chairs": 3,
+      "successful_analysis": 3,
+      "failed_analysis": 0,
+      "results_data": "                   chair_id  ...  climate change - global warming potential (GWP20) (kg CO2-Eq)\n0  Chair_Chair_generation_2  ...                                          13.431121            \n1  Chair_Chair_generation_3  ...                                          13.431121            \n2  Chair_Chair_generation_4  ...                                          13.431121            \n\n[3 rows x 11 columns]",
+      "results_file": "workflow_reports/openlca_results/openlca_batch_results_20250709_232403.csv",
+      "excel_file": "workflow_reports/openlca_results/openlca_batch_results_20250709_232403.xlsx",
+      "processing_time": 71.92936396598816
+    }
+  },
+  "summary": {
+    "workflow_success": true,
+    "lca_success": true,
+    "total_chairs_analyzed": 3,
+    "average_carbon_footprint": 10.634350159178247,
+    "average_sustainability_score": 75,
+    "average_wood_percentage": 0
+  },
+  "recommendations": [
+    "碳足跡偏高，建議優化材料選擇和生產工藝"
+  ]
+}

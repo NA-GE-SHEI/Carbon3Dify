@@ -1,0 +1,684 @@
+{
+  "timestamp": "2025-07-09T23:21:13.253729",
+  "base_input_directory": "obj_models",
+  "base_output_directory": "modified_obj",
+  "chair_main_directory": "obj_models/Chair",
+  "processed_generations": 5,
+  "total_processed_files": 5,
+  "total_failed_files": 0,
+  "generation_results": {
+    "Chair_generation_1": {
+      "success": true,
+      "total_files": 1,
+      "processed_files": [
+        {
+          "input_file": "obj_models/Chair/Chair_generation_1/Chair_generation_1.obj",
+          "output_file": "modified_obj/Chair/Chair_generation_1/(modification)Chair_generation_1.obj"
+        }
+      ],
+      "failed_files": [],
+      "analysis_results": [
+        {
+          "original_file": "obj_models/Chair/Chair_generation_1/Chair_generation_1.obj",
+          "modified_file": "modified_obj/Chair/Chair_generation_1/(modification)Chair_generation_1.obj",
+          "original_analysis": {
+            "file_name": "Chair_generation_1.obj",
+            "analysis_timestamp": "2025-07-09T23:20:58.753712",
+            "basic_statistics": {
+              "vertices_count": 5948,
+              "faces_count": 11900,
+              "file_size_mb": 0.3936595916748047
+            },
+            "connectivity_analysis": {
+              "connected_components": 3,
+              "largest_component_size": 5600,
+              "component_size_distribution": [
+                5600,
+                329,
+                19
+              ],
+              "connectivity_ratio": 0.9414929388029589
+            },
+            "manifold_analysis": {
+              "boundary_edges": 0,
+              "non_manifold_edges": 0,
+              "manifold_edges": 17850,
+              "total_edges": 17850,
+              "is_closed": true,
+              "is_manifold": true
+            },
+            "face_quality_analysis": {
+              "total_area": 1.3548418349258078,
+              "avg_area": 0.00011385225503578248,
+              "min_area": 2.2423889252656074e-06,
+              "max_area": 0.0015522720338253147,
+              "area_std": 0.00013268436304027362,
+              "avg_aspect_ratio": 2.353382876882137,
+              "max_aspect_ratio": 22.963733459926747
+            },
+            "geometric_analysis": {
+              "bounding_box_size": [
+                0.67309716,
+                0.73490453,
+                0.99987173
+              ],
+              "bounding_box_volume": 0.4945987016998959,
+              "centroid": [
+                0.021197077172158726,
+                0.010721373162407457,
+                0.008964876856086065
+              ]
+            },
+            "isolated_vertices_count": 0,
+            "euler_characteristic": -2,
+            "topology_genus": 2
+          },
+          "processed_analysis": {
+            "file_name": "(modification)Chair_generation_1.obj",
+            "analysis_timestamp": "2025-07-09T23:20:59.751070",
+            "basic_statistics": {
+              "vertices_count": 5600,
+              "faces_count": 11212,
+              "file_size_mb": 0.3685932159423828
+            },
+            "connectivity_analysis": {
+              "connected_components": 1,
+              "largest_component_size": 5600,
+              "component_size_distribution": [
+                5600
+              ],
+              "connectivity_ratio": 1.0
+            },
+            "manifold_analysis": {
+              "boundary_edges": 0,
+              "non_manifold_edges": 0,
+              "manifold_edges": 16818,
+              "total_edges": 16818,
+              "is_closed": true,
+              "is_manifold": true
+            },
+            "face_quality_analysis": {
+              "total_area": 1.2557247136650984,
+              "avg_area": 0.00011199827984883175,
+              "min_area": 2.2423889252656074e-06,
+              "max_area": 0.0015522720338253147,
+              "area_std": 0.00013340502277439466,
+              "avg_aspect_ratio": 2.3381179536661096,
+              "max_aspect_ratio": 22.963733459926747
+            },
+            "geometric_analysis": {
+              "bounding_box_size": [
+                0.62272781,
+                0.72682625,
+                0.70340136
+              ],
+              "bounding_box_volume": 0.3183699495197027,
+              "centroid": [
+                0.014058140508928582,
+                0.02544639860714277,
+                -0.01379530181785717
+              ]
+            },
+            "isolated_vertices_count": 0,
+            "euler_characteristic": -6,
+            "topology_genus": 4
+          },
+          "processing_impact": {
+            "vertices_reduction_rate": 0.05850706119704108,
+            "faces_reduction_rate": 0.05781512605042016,
+            "connectivity_improvement": {
+              "components_reduced": 2,
+              "main_component_retention": 1.0
+            },
+            "manifold_quality_change": {
+              "boundary_edges_change": 0,
+              "non_manifold_edges_change": 0
+            },
+            "topology_preservation": {
+              "euler_characteristic_change": -4,
+              "genus_change": 2
+            }
+          },
+          "generation_id": "Chair_generation_1"
+        }
+      ]
+    },
+    "Chair_generation_2": {
+      "success": true,
+      "total_files": 1,
+      "processed_files": [
+        {
+          "input_file": "obj_models/Chair/Chair_generation_2/Chair_generation_2.obj",
+          "output_file": "modified_obj/Chair/Chair_generation_2/(modification)Chair_generation_2.obj"
+        }
+      ],
+      "failed_files": [],
+      "analysis_results": [
+        {
+          "original_file": "obj_models/Chair/Chair_generation_2/Chair_generation_2.obj",
+          "modified_file": "modified_obj/Chair/Chair_generation_2/(modification)Chair_generation_2.obj",
+          "original_analysis": {
+            "file_name": "Chair_generation_2.obj",
+            "analysis_timestamp": "2025-07-09T23:21:00.565816",
+            "basic_statistics": {
+              "vertices_count": 4735,
+              "faces_count": 9490,
+              "file_size_mb": 0.3123502731323242
+            },
+            "connectivity_analysis": {
+              "connected_components": 1,
+              "largest_component_size": 4735,
+              "component_size_distribution": [
+                4735
+              ],
+              "connectivity_ratio": 1.0
+            },
+            "manifold_analysis": {
+              "boundary_edges": 0,
+              "non_manifold_edges": 1,
+              "manifold_edges": 14233,
+              "total_edges": 14234,
+              "is_closed": true,
+              "is_manifold": false
+            },
+            "face_quality_analysis": {
+              "total_area": 1.6422117300064913,
+              "avg_area": 0.00017304654689214815,
+              "min_area": 1.0193699817275856e-06,
+              "max_area": 0.002565169209948472,
+              "area_std": 0.000200117823481396,
+              "avg_aspect_ratio": 2.6060782268172513,
+              "max_aspect_ratio": 43.76062286511371
+            },
+            "geometric_analysis": {
+              "bounding_box_size": [
+                0.61518365,
+                1.00051457,
+                0.67116872
+              ],
+              "bounding_box_volume": 0.4131044847836699,
+              "centroid": [
+                0.006965572397043289,
+                -0.008560371357972526,
+                0.010043198563885917
+              ]
+            },
+            "isolated_vertices_count": 0,
+            "euler_characteristic": -9,
+            "topology_genus": 5
+          },
+          "processed_analysis": {
+            "file_name": "(modification)Chair_generation_2.obj",
+            "analysis_timestamp": "2025-07-09T23:21:01.300449",
+            "basic_statistics": {
+              "vertices_count": 4735,
+              "faces_count": 9490,
+              "file_size_mb": 0.31079959869384766
+            },
+            "connectivity_analysis": {
+              "connected_components": 1,
+              "largest_component_size": 4735,
+              "component_size_distribution": [
+                4735
+              ],
+              "connectivity_ratio": 1.0
+            },
+            "manifold_analysis": {
+              "boundary_edges": 0,
+              "non_manifold_edges": 1,
+              "manifold_edges": 14233,
+              "total_edges": 14234,
+              "is_closed": true,
+              "is_manifold": false
+            },
+            "face_quality_analysis": {
+              "total_area": 1.6422117300064913,
+              "avg_area": 0.00017304654689214815,
+              "min_area": 1.0193699817275856e-06,
+              "max_area": 0.002565169209948472,
+              "area_std": 0.000200117823481396,
+              "avg_aspect_ratio": 2.6060782268172513,
+              "max_aspect_ratio": 43.76062286511371
+            },
+            "geometric_analysis": {
+              "bounding_box_size": [
+                0.61518365,
+                1.00051457,
+                0.67116872
+              ],
+              "bounding_box_volume": 0.4131044847836699,
+              "centroid": [
+                0.006965572397043289,
+                -0.008560371357972526,
+                0.010043198563885917
+              ]
+            },
+            "isolated_vertices_count": 0,
+            "euler_characteristic": -9,
+            "topology_genus": 5
+          },
+          "processing_impact": {
+            "vertices_reduction_rate": 0.0,
+            "faces_reduction_rate": 0.0,
+            "connectivity_improvement": {
+              "components_reduced": 0,
+              "main_component_retention": 1.0
+            },
+            "manifold_quality_change": {
+              "boundary_edges_change": 0,
+              "non_manifold_edges_change": 0
+            },
+            "topology_preservation": {
+              "euler_characteristic_change": 0,
+              "genus_change": 0
+            }
+          },
+          "generation_id": "Chair_generation_2"
+        }
+      ]
+    },
+    "Chair_generation_3": {
+      "success": true,
+      "total_files": 1,
+      "processed_files": [
+        {
+          "input_file": "obj_models/Chair/Chair_generation_3/Chair_generation_3.obj",
+          "output_file": "modified_obj/Chair/Chair_generation_3/(modification)Chair_generation_3.obj"
+        }
+      ],
+      "failed_files": [],
+      "analysis_results": [
+        {
+          "original_file": "obj_models/Chair/Chair_generation_3/Chair_generation_3.obj",
+          "modified_file": "modified_obj/Chair/Chair_generation_3/(modification)Chair_generation_3.obj",
+          "original_analysis": {
+            "file_name": "Chair_generation_3.obj",
+            "analysis_timestamp": "2025-07-09T23:21:03.271112",
+            "basic_statistics": {
+              "vertices_count": 13650,
+              "faces_count": 27304,
+              "file_size_mb": 0.9358415603637695
+            },
+            "connectivity_analysis": {
+              "connected_components": 1,
+              "largest_component_size": 13650,
+              "component_size_distribution": [
+                13650
+              ],
+              "connectivity_ratio": 1.0
+            },
+            "manifold_analysis": {
+              "boundary_edges": 0,
+              "non_manifold_edges": 0,
+              "manifold_edges": 40956,
+              "total_edges": 40956,
+              "is_closed": true,
+              "is_manifold": true
+            },
+            "face_quality_analysis": {
+              "total_area": 3.940497637065552,
+              "avg_area": 0.00014431942708268238,
+              "min_area": 1.7942459800250966e-07,
+              "max_area": 0.0019985654252660584,
+              "area_std": 0.0001504825135769454,
+              "avg_aspect_ratio": 2.4499435410066828,
+              "max_aspect_ratio": 40.10023345828261
+            },
+            "geometric_analysis": {
+              "bounding_box_size": [
+                0.92733825,
+                0.9975642600000001,
+                0.9332052399999999
+              ],
+              "bounding_box_volume": 0.8632890322727524,
+              "centroid": [
+                -0.0015757606901098994,
+                0.03635835064175831,
+                -0.08177398907985331
+              ]
+            },
+            "isolated_vertices_count": 0,
+            "euler_characteristic": -2,
+            "topology_genus": 2
+          },
+          "processed_analysis": {
+            "file_name": "(modification)Chair_generation_3.obj",
+            "analysis_timestamp": "2025-07-09T23:21:05.525681",
+            "basic_statistics": {
+              "vertices_count": 13650,
+              "faces_count": 27304,
+              "file_size_mb": 0.9314479827880859
+            },
+            "connectivity_analysis": {
+              "connected_components": 1,
+              "largest_component_size": 13650,
+              "component_size_distribution": [
+                13650
+              ],
+              "connectivity_ratio": 1.0
+            },
+            "manifold_analysis": {
+              "boundary_edges": 0,
+              "non_manifold_edges": 0,
+              "manifold_edges": 40956,
+              "total_edges": 40956,
+              "is_closed": true,
+              "is_manifold": true
+            },
+            "face_quality_analysis": {
+              "total_area": 3.940497637065552,
+              "avg_area": 0.00014431942708268238,
+              "min_area": 1.7942459800250966e-07,
+              "max_area": 0.0019985654252660584,
+              "area_std": 0.0001504825135769454,
+              "avg_aspect_ratio": 2.4499435410066828,
+              "max_aspect_ratio": 40.10023345828261
+            },
+            "geometric_analysis": {
+              "bounding_box_size": [
+                0.92733825,
+                0.9975642600000001,
+                0.9332052399999999
+              ],
+              "bounding_box_volume": 0.8632890322727524,
+              "centroid": [
+                -0.0015757606901098994,
+                0.03635835064175831,
+                -0.08177398907985331
+              ]
+            },
+            "isolated_vertices_count": 0,
+            "euler_characteristic": -2,
+            "topology_genus": 2
+          },
+          "processing_impact": {
+            "vertices_reduction_rate": 0.0,
+            "faces_reduction_rate": 0.0,
+            "connectivity_improvement": {
+              "components_reduced": 0,
+              "main_component_retention": 1.0
+            },
+            "manifold_quality_change": {
+              "boundary_edges_change": 0,
+              "non_manifold_edges_change": 0
+            },
+            "topology_preservation": {
+              "euler_characteristic_change": 0,
+              "genus_change": 0
+            }
+          },
+          "generation_id": "Chair_generation_3"
+        }
+      ]
+    },
+    "Chair_generation_4": {
+      "success": true,
+      "total_files": 1,
+      "processed_files": [
+        {
+          "input_file": "obj_models/Chair/Chair_generation_4/Chair_generation_4.obj",
+          "output_file": "modified_obj/Chair/Chair_generation_4/(modification)Chair_generation_4.obj"
+        }
+      ],
+      "failed_files": [],
+      "analysis_results": [
+        {
+          "original_file": "obj_models/Chair/Chair_generation_4/Chair_generation_4.obj",
+          "modified_file": "modified_obj/Chair/Chair_generation_4/(modification)Chair_generation_4.obj",
+          "original_analysis": {
+            "file_name": "Chair_generation_4.obj",
+            "analysis_timestamp": "2025-07-09T23:21:07.595792",
+            "basic_statistics": {
+              "vertices_count": 14355,
+              "faces_count": 28766,
+              "file_size_mb": 0.9822492599487305
+            },
+            "connectivity_analysis": {
+              "connected_components": 2,
+              "largest_component_size": 13518,
+              "component_size_distribution": [
+                13518,
+                837
+              ],
+              "connectivity_ratio": 0.941692789968652
+            },
+            "manifold_analysis": {
+              "boundary_edges": 3,
+              "non_manifold_edges": 7,
+              "manifold_edges": 43135,
+              "total_edges": 43145,
+              "is_closed": false,
+              "is_manifold": false
+            },
+            "face_quality_analysis": {
+              "total_area": 3.7638577603555743,
+              "avg_area": 0.00013084397414849378,
+              "min_area": 1.4781448162386397e-06,
+              "max_area": 0.004627496319151746,
+              "area_std": 0.0001935338537319917,
+              "avg_aspect_ratio": 2.6921033828471455,
+              "max_aspect_ratio": 44.57228634630081
+            },
+            "geometric_analysis": {
+              "bounding_box_size": [
+                0.7465223599999999,
+                0.9924697,
+                0.94999903
+              ],
+              "bounding_box_volume": 0.7038550628650693,
+              "centroid": [
+                0.002941267479623801,
+                -0.012490555827237838,
+                0.0285221633340301
+              ]
+            },
+            "isolated_vertices_count": 0,
+            "euler_characteristic": -24,
+            "topology_genus": null
+          },
+          "processed_analysis": {
+            "file_name": "(modification)Chair_generation_4.obj",
+            "analysis_timestamp": "2025-07-09T23:21:09.776491",
+            "basic_statistics": {
+              "vertices_count": 13518,
+              "faces_count": 27096,
+              "file_size_mb": 0.9160985946655273
+            },
+            "connectivity_analysis": {
+              "connected_components": 1,
+              "largest_component_size": 13518,
+              "component_size_distribution": [
+                13518
+              ],
+              "connectivity_ratio": 1.0
+            },
+            "manifold_analysis": {
+              "boundary_edges": 3,
+              "non_manifold_edges": 7,
+              "manifold_edges": 40630,
+              "total_edges": 40640,
+              "is_closed": false,
+              "is_manifold": false
+            },
+            "face_quality_analysis": {
+              "total_area": 3.6626944533969605,
+              "avg_area": 0.00013517472886761736,
+              "min_area": 1.4781448162386397e-06,
+              "max_area": 0.004627496319151746,
+              "area_std": 0.00019826709044164096,
+              "avg_aspect_ratio": 2.6856183434546206,
+              "max_aspect_ratio": 44.57228634630081
+            },
+            "geometric_analysis": {
+              "bounding_box_size": [
+                0.7465223599999999,
+                0.9924697,
+                0.77282786
+              ],
+              "bounding_box_volume": 0.5725887972582214,
+              "centroid": [
+                0.0030827895088030577,
+                0.014308810651723708,
+                0.05983663756176961
+              ]
+            },
+            "isolated_vertices_count": 0,
+            "euler_characteristic": -26,
+            "topology_genus": null
+          },
+          "processing_impact": {
+            "vertices_reduction_rate": 0.05830721003134798,
+            "faces_reduction_rate": 0.05805464784815406,
+            "connectivity_improvement": {
+              "components_reduced": 1,
+              "main_component_retention": 1.0
+            },
+            "manifold_quality_change": {
+              "boundary_edges_change": 0,
+              "non_manifold_edges_change": 0
+            },
+            "topology_preservation": {
+              "euler_characteristic_change": -2,
+              "genus_change": 0
+            }
+          },
+          "generation_id": "Chair_generation_4"
+        }
+      ]
+    },
+    "Chair_generation_5": {
+      "success": true,
+      "total_files": 1,
+      "processed_files": [
+        {
+          "input_file": "obj_models/Chair/Chair_generation_5/Chair_generation_5.obj",
+          "output_file": "modified_obj/Chair/Chair_generation_5/(modification)Chair_generation_5.obj"
+        }
+      ],
+      "failed_files": [],
+      "analysis_results": [
+        {
+          "original_file": "obj_models/Chair/Chair_generation_5/Chair_generation_5.obj",
+          "modified_file": "modified_obj/Chair/Chair_generation_5/(modification)Chair_generation_5.obj",
+          "original_analysis": {
+            "file_name": "Chair_generation_5.obj",
+            "analysis_timestamp": "2025-07-09T23:21:10.575412",
+            "basic_statistics": {
+              "vertices_count": 5472,
+              "faces_count": 10944,
+              "file_size_mb": 0.36132049560546875
+            },
+            "connectivity_analysis": {
+              "connected_components": 1,
+              "largest_component_size": 5472,
+              "component_size_distribution": [
+                5472
+              ],
+              "connectivity_ratio": 1.0
+            },
+            "manifold_analysis": {
+              "boundary_edges": 0,
+              "non_manifold_edges": 0,
+              "manifold_edges": 16416,
+              "total_edges": 16416,
+              "is_closed": true,
+              "is_manifold": true
+            },
+            "face_quality_analysis": {
+              "total_area": 1.8012491448068808,
+              "avg_area": 0.00016458782390413716,
+              "min_area": 1.241659385476422e-06,
+              "max_area": 0.0026524322528492373,
+              "area_std": 0.00020029004106377236,
+              "avg_aspect_ratio": 2.587669034505497,
+              "max_aspect_ratio": 28.121406933197495
+            },
+            "geometric_analysis": {
+              "bounding_box_size": [
+                0.6888026,
+                0.99825871,
+                0.6790108100000001
+              ],
+              "bounding_box_volume": 0.4668900023416558,
+              "centroid": [
+                0.006677386248172579,
+                0.024555097012061454,
+                -0.022156681648391963
+              ]
+            },
+            "isolated_vertices_count": 0,
+            "euler_characteristic": 0,
+            "topology_genus": 1
+          },
+          "processed_analysis": {
+            "file_name": "(modification)Chair_generation_5.obj",
+            "analysis_timestamp": "2025-07-09T23:21:11.431356",
+            "basic_statistics": {
+              "vertices_count": 5472,
+              "faces_count": 10944,
+              "file_size_mb": 0.35956382751464844
+            },
+            "connectivity_analysis": {
+              "connected_components": 1,
+              "largest_component_size": 5472,
+              "component_size_distribution": [
+                5472
+              ],
+              "connectivity_ratio": 1.0
+            },
+            "manifold_analysis": {
+              "boundary_edges": 0,
+              "non_manifold_edges": 0,
+              "manifold_edges": 16416,
+              "total_edges": 16416,
+              "is_closed": true,
+              "is_manifold": true
+            },
+            "face_quality_analysis": {
+              "total_area": 1.8012491448068808,
+              "avg_area": 0.00016458782390413716,
+              "min_area": 1.241659385476422e-06,
+              "max_area": 0.0026524322528492373,
+              "area_std": 0.00020029004106377236,
+              "avg_aspect_ratio": 2.587669034505497,
+              "max_aspect_ratio": 28.121406933197495
+            },
+            "geometric_analysis": {
+              "bounding_box_size": [
+                0.6888026,
+                0.99825871,
+                0.6790108100000001
+              ],
+              "bounding_box_volume": 0.4668900023416558,
+              "centroid": [
+                0.006677386248172579,
+                0.024555097012061454,
+                -0.022156681648391963
+              ]
+            },
+            "isolated_vertices_count": 0,
+            "euler_characteristic": 0,
+            "topology_genus": 1
+          },
+          "processing_impact": {
+            "vertices_reduction_rate": 0.0,
+            "faces_reduction_rate": 0.0,
+            "connectivity_improvement": {
+              "components_reduced": 0,
+              "main_component_retention": 1.0
+            },
+            "manifold_quality_change": {
+              "boundary_edges_change": 0,
+              "non_manifold_edges_change": 0
+            },
+            "topology_preservation": {
+              "euler_characteristic_change": 0,
+              "genus_change": 0
+            }
+          },
+          "generation_id": "Chair_generation_5"
+        }
+      ]
+    }
+  }
+}

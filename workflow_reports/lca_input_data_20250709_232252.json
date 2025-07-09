@@ -1,0 +1,53 @@
+[
+  {
+    "chair_id": "Chair_Chair_generation_2",
+    "3d_model_path": "3d_models/Chair/Chair_generation_2/Chair_generation_2.glb",
+    "model_count": 1,
+    "material_analysis": {
+      "wood_percentage": 90,
+      "has_material_detection": false,
+      "default_material": "wood"
+    },
+    "seat_area": 450,
+    "seat_thickness": 3.0,
+    "geometry_analysis": {
+      "bounding_box_volume": 3000
+    },
+    "estimated_weight": 4.2,
+    "wood_type": "generic_wood"
+  },
+  {
+    "chair_id": "Chair_Chair_generation_3",
+    "3d_model_path": "3d_models/Chair/Chair_generation_3/Chair_generation_3.glb",
+    "model_count": 1,
+    "material_analysis": {
+      "wood_percentage": 90,
+      "has_material_detection": false,
+      "default_material": "wood"
+    },
+    "seat_area": 450,
+    "seat_thickness": 3.0,
+    "geometry_analysis": {
+      "bounding_box_volume": 3000
+    },
+    "estimated_weight": 4.2,
+    "wood_type": "generic_wood"
+  },
+  {
+    "chair_id": "Chair_Chair_generation_4",
+    "3d_model_path": "3d_models/Chair/Chair_generation_4/Chair_generation_4.glb",
+    "model_count": 1,
+    "material_analysis": {
+      "wood_percentage": 90,
+      "has_material_detection": false,
+      "default_material": "wood"
+    },
+    "seat_area": 450,
+    "seat_thickness": 3.0,
+    "geometry_analysis": {
+      "bounding_box_volume": 3000
+    },
+    "estimated_weight": 4.2,
+    "wood_type": "generic_wood"
+  }
+]

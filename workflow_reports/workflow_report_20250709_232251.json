@@ -1,0 +1,97 @@
+{
+  "success": true,
+  "executed_steps": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "step_results": {
+    "1": {
+      "success": true,
+      "error": null,
+      "timing": 1.5659754276275635
+    },
+    "2": {
+      "success": true,
+      "error": null,
+      "timing": 15.78069543838501
+    },
+    "3": {
+      "success": true,
+      "error": null,
+      "timing": 0.00453639030456543
+    },
+    "4": {
+      "success": true,
+      "error": null,
+      "timing": 13.872454404830933
+    },
+    "5": {
+      "success": true,
+      "error": null,
+      "timing": 84.52038502693176
+    }
+  },
+  "timing_records": {
+    "step_1": 1.5659754276275635,
+    "step_2": 15.78069543838501,
+    "step_3": 0.00453639030456543,
+    "step_4": 13.872454404830933,
+    "step_5": 84.52038502693176,
+    "total_time": 115.75357699394226
+  },
+  "total_time": 115.75357699394226,
+  "processed_generations": 5,
+  "generation_list": [
+    "Chair_generation_2",
+    "Chair_generation_3",
+    "Chair_generation_4",
+    "Chair_generation_1",
+    "Chair_generation_5"
+  ],
+  "config": {
+    "input_dirs": {
+      "glb_models": "./3d_models",
+      "csv_data": "./models/chair_raw_data_v2_idmatched_revised_cleaned_aug_v2.csv"
+    },
+    "output_dirs": {
+      "obj_models": "./obj_models",
+      "modified_obj": "./modified_obj",
+      "geometry_analysis": "./geometry_analysis",
+      "bootstrap_analysis": "./bootstrap_analysis",
+      "enhanced_analysis": "./enhanced_analysis"
+    },
+    "processing": {
+      "skip_existing": true,
+      "generation_filter": null
+    },
+    "bootstrap": {
+      "n_iterations": 50,
+      "ci_level": 0.95,
+      "skip_execution": false
+    },
+    "analysis": {
+      "test_size": 0.2,
+      "random_state": 42,
+      "n_estimators": 100,
+      "max_depth": 10,
+      "model_type": "all"
+    },
+    "chair_params": {
+      "is_square": 0,
+      "is_round": 1,
+      "seat_area": 707,
+      "seat_thickness": 3,
+      "true_weight": 4.2
+    },
+    "enabled_steps": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  }
+}
