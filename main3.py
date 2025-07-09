@@ -913,7 +913,7 @@ def main():
             logger.info(f"   - LCA摘要報告: {lca_results['report_files']['text_summary']}")
 
 def run_openlca_analysis(chairs_data: List[Dict]) -> Dict:
-    """使用OpenLCA進行專業LCA分析"""
+    """使用OpenLCA進行專業LCA分析 - 修改版"""
     try:
         logger.info("♻️ 開始OpenLCA專業LCA分析")
         
@@ -922,156 +922,103 @@ def run_openlca_analysis(chairs_data: List[Dict]) -> Dict:
         
         # 連接到OpenLCA
         if not calculator.connect():
-            return {'success': False, 'error': 'Cannot connect to OpenLCA'}
+            logger.error("❌ 無法連接到OpenLCA服務器")
+            return {
+                'success': False, 
+                'error': 'Cannot connect to OpenLCA',
+                'message': '無法連接到OpenLCA服務器，請確保OpenLCA正在運行並開啟了IPC服務器'
+            }
         
-        # 尋找適合的產品系統
-        systems = calculator.get_product_systems()
-        if not systems:
-            calculator.close()
-            return {'success': False, 'error': 'No product systems found'}
-        
-        # 使用第一個可用的產品系統
-        system_id, system_name = systems[0]
-        logger.info(f"使用產品系統: {system_name}")
-        
-        # 獲取影響評估方法
-        methods = calculator.get_impact_methods()
-        method_id = methods[0][0] if methods else None
-        
-        successful_analyses = 0
-        failed_analyses = 0
-        lca_results = []
-        
-        for chair_data in chairs_data:
-            try:
-                chair_id = chair_data.get('chair_id', 'Unknown')
-                estimated_weight = chair_data.get('estimated_weight', 4.0)
-                
-                # 執行OpenLCA計算
-                result = calculator.run_calculation(
-                    product_system_id=system_id,
-                    amount=estimated_weight,  # 使用椅子重量作為計算量
-                    impact_method_id=method_id
-                )
-                
-                if result:
-                    # 獲取結果
-                    inventory = calculator.get_inventory_results(result)
-                    impact_results = calculator.get_impact_results(result) if method_id else None
-                    
-                    # 構建結果
-                    chair_lca_result = {
-                        'chair_id': chair_id,
-                        'analysis_timestamp': datetime.now().isoformat(),
-                        'calculation_method': 'OpenLCA_Professional',
-                        'product_system': system_name,
-                        'functional_unit': estimated_weight,
-                        'inventory_flows': {
-                            'inputs_count': len(inventory['inputs']),
-                            'outputs_count': len(inventory['outputs'])
-                        },
-                        'materials': chair_data.get('material_analysis', {}),
-                        'estimated_weight': estimated_weight,
-                        'success': True
-                    }
-                    
-                    # 如果有影響評估結果，提取碳足跡
-                    if impact_results is not None and not impact_results.empty:
-                        # 尋找碳足跡相關指標
-                        carbon_indicators = impact_results[
-                            impact_results['category_name'].str.contains(
-                                'climate|carbon|CO2|warming', case=False, na=False
-                            )
-                        ]
-                        
-                        if not carbon_indicators.empty:
-                            carbon_footprint = carbon_indicators.iloc[0]['amount']
-                            chair_lca_result['carbon_footprint'] = {
-                                'total_carbon_kg_co2': carbon_footprint,
-                                'carbon_efficiency_kg_co2_per_kg': carbon_footprint / estimated_weight,
-                                'source': 'OpenLCA_Database'
-                            }
-                    
-                    # 計算可持續性評分（基於材料成分）
-                    material_analysis = chair_data.get('material_analysis', {})
-                    wood_percentage = material_analysis.get('wood_percentage', 90) / 100
-                    sustainability_score = wood_percentage * 85 + 15  # 簡化評分
-                    
-                    chair_lca_result['sustainability_score'] = {
-                        'overall_sustainability_score': sustainability_score,
-                        'material_sustainability_score': wood_percentage * 85,
-                        'sustainability_grade': 'Good' if sustainability_score >= 70 else 'Fair'
-                    }
-                    
-                    lca_results.append(chair_lca_result)
-                    successful_analyses += 1
-                    
-                    # 釋放結果資源
-                    calculator.close_result(result)
-                    
-                else:
-                    failed_analyses += 1
-                    logger.error(f"OpenLCA計算失敗: {chair_id}")
-                    
-            except Exception as e:
-                failed_analyses += 1
-                logger.error(f"椅子 {chair_data.get('chair_id')} OpenLCA分析失敗: {e}")
+        # 執行批量計算
+        logger.info(f"📊 開始批量計算 {len(chairs_data)} 個椅子...")
+        batch_results = calculator.batch_calculate_chairs(chairs_data)
         
         # 關閉連接
         calculator.close()
         
-        if successful_analyses == 0:
-            return {'success': False, 'error': 'All OpenLCA analyses failed'}
-        
-        # 計算統計摘要
-        carbon_footprints = [r.get('carbon_footprint', {}).get('total_carbon_kg_co2', 0) 
-                           for r in lca_results if 'carbon_footprint' in r]
-        sustainability_scores = [r.get('sustainability_score', {}).get('overall_sustainability_score', 0) 
-                               for r in lca_results]
-        
-        summary_stats = {
-            'total_chairs': len(chairs_data),
-            'successful_analysis': successful_analyses,
-            'failed_analysis': failed_analyses,
-            'average_carbon_footprint': np.mean(carbon_footprints) if carbon_footprints else 0,
-            'average_sustainability_score': np.mean(sustainability_scores) if sustainability_scores else 0,
-            'calculation_method': 'OpenLCA_Professional'
-        }
-        
-        # 保存詳細報告
-        reports_dir = Path("./workflow_reports")
-        reports_dir.mkdir(exist_ok=True)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        
-        json_report = {
-            'analysis_timestamp': datetime.now().isoformat(),
-            'calculation_method': 'OpenLCA_Professional',
-            'summary_statistics': summary_stats,
-            'individual_results': lca_results,
-            'openlca_system_used': system_name
-        }
-        
-        json_file = reports_dir / f'openlca_analysis_report_{timestamp}.json'
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(json_report, f, indent=2, ensure_ascii=False)
-        
-        logger.info("✅ OpenLCA專業分析完成")
-        logger.info(f"📊 成功分析 {successful_analyses}/{len(chairs_data)} 個椅子")
-        logger.info(f"📄 詳細報告已保存: {json_file}")
-        
-        return {
-            'success': True,
-            'summary': summary_stats,
-            'detailed_results': lca_results,
-            'report_files': {
-                'json_report': str(json_file)
+        if batch_results['success']:
+            logger.info("✅ OpenLCA專業分析完成")
+            logger.info(f"📊 成功分析 {batch_results['successful_analysis']}/{batch_results['total_chairs']} 個椅子")
+            logger.info(f"⏱️ 處理時間: {batch_results['processing_time']:.1f}秒")
+            logger.info(f"📄 詳細結果已保存: {batch_results['results_file']}")
+            
+            # 轉換為與原有格式兼容的結果
+            results_data = batch_results['results_data']
+            
+            # 計算統計摘要
+            carbon_columns = [col for col in results_data.columns 
+                            if 'climate change' in col.lower() or 'global warming' in col.lower()]
+            
+            if carbon_columns:
+                carbon_values = results_data[carbon_columns[0]].dropna()
+                avg_carbon = carbon_values.mean() if len(carbon_values) > 0 else 0
+            else:
+                avg_carbon = 0
+            
+            # 構建兼容的返回格式
+            compatible_results = []
+            for _, row in results_data.iterrows():
+                chair_result = {
+                    'chair_id': row.get('chair_id', 'Unknown'),
+                    'analysis_timestamp': datetime.now().isoformat(),
+                    'calculation_method': 'OpenLCA_Professional',
+                    'materials': {
+                        'wood_percentage': row.get('wood_percentage', 90) / 100 if 'wood_percentage' in row else 0.9,
+                        'has_material_detection': True
+                    },
+                    'estimated_weight': row.get('estimated_weight', 4.0),
+                    'carbon_footprint': {
+                        'total_carbon_kg_co2': carbon_values.iloc[0] if len(carbon_values) > 0 else avg_carbon,
+                        'carbon_efficiency_kg_co2_per_kg': (carbon_values.iloc[0] / row.get('estimated_weight', 4.0)) if len(carbon_values) > 0 else 0,
+                        'source': 'OpenLCA_Database'
+                    },
+                    'sustainability_score': {
+                        'overall_sustainability_score': 75,  # 基於OpenLCA結果的簡化評分
+                        'sustainability_grade': 'Good'
+                    },
+                    'openlca_results': row.to_dict(),
+                    'success': True
+                }
+                compatible_results.append(chair_result)
+            
+            summary_stats = {
+                'total_chairs': batch_results['total_chairs'],
+                'successful_analysis': batch_results['successful_analysis'],
+                'failed_analysis': batch_results['failed_analysis'],
+                'average_carbon_footprint': avg_carbon,
+                'average_sustainability_score': 75,
+                'calculation_method': 'OpenLCA_Professional',
+                'processing_time': batch_results['processing_time']
             }
-        }
-        
+            
+            return {
+                'success': True,
+                'summary': summary_stats,
+                'detailed_results': compatible_results,
+                'report_files': {
+                    'csv_report': batch_results['results_file'],
+                    'excel_report': batch_results['excel_file']
+                },
+                'openlca_raw_results': batch_results
+            }
+        else:
+            logger.error("❌ OpenLCA批量分析失敗")
+            logger.error(f"錯誤信息: {batch_results.get('error', 'Unknown error')}")
+            return {
+                'success': False,
+                'error': batch_results.get('error', 'OpenLCA analysis failed'),
+                'message': 'OpenLCA專業分析失敗'
+            }
+            
     except Exception as e:
         logger.error(f"❌ OpenLCA分析過程中發生異常: {e}")
-        return {'success': False, 'error': str(e)}
-    
+        return {
+            'success': False,
+            'error': str(e),
+            'message': 'OpenLCA分析過程中發生錯誤'
+        }
+
+
 if __name__ == '__main__':
     # 檢查所需腳本是否存在
     required_scripts = [

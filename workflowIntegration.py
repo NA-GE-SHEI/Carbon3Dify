@@ -175,13 +175,22 @@ class WorkflowIntegration:
         
         try:
             from calculate_carbon.modification_obj import GeometryAnalyzer
-            
+            # from calculate_carbon.chair_split_structure import PerfectChairSegmenter
+
             analyzer = GeometryAnalyzer()
             result = analyzer.process_chair_models(
                 self.config['output_dirs']['obj_models'],
                 self.config['output_dirs']['modified_obj']
             )
-            
+            # 建立分割器
+            # segmenter = PerfectChairSegmenter(
+            #     input_path=self.config['output_dirs']['modified_obj'],
+            #     layer_height=0.002,
+            #     eps=0.1,
+            #     min_samples=10
+            # )
+            # result = segmenter.segment()
+
             step_time = time.time() - step_start_time
             self.timing_records['step_2'] = step_time
             
