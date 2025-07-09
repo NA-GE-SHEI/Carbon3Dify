@@ -1,2 +1,0 @@
-predicted_weight(kg),true_weight(kg),absolute_error(kg),relative_error(%),is_square,is_round,back_height(cm),back_volume(cm³),seat_area(cm²),seat_thickness(cm),leg_height(cm),leg_volume(cm³)
-7.06095597649076,N/A,N/A,N/A,0,1,N/A,390.0,707,3,37.37,1550.0
