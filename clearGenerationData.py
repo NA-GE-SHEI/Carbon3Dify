@@ -15,7 +15,8 @@ remove_dir_list = [
     "./workflow_reports",
     "./integrated_results",
     "./enhanced_rf_result",
-    "./result"
+    "./result",
+    "./visual_reports"
 ]
 
 remove_files_list = [
