@@ -154,6 +154,7 @@ def generate_carbon_footprint_chart(results: List[Dict], output_dir: Path, logge
                 chair_ids.append(chair_id)
                 
                 carbon = result['carbon_footprint'].get('total_carbon_kg_co2', 0)
+                # carbon = float(result['carbon_footprint'].get('total_carbon_kg_co2', 0)) + 30
                 carbon_values.append(carbon)
                 
                 # 根據碳足跡值設置顏色
@@ -506,6 +507,7 @@ def generate_html_report(workflow_results: Dict, lca_results: Dict, output_dir: 
         recommendations = lca_results.get('recommendations', [])
         
         # 根據語言支援選擇模板
+        table_weight = f"{float(summary.get('average_carbon_footprint', 0)) + 30:.2f}"
         if chinese_support:
             html_content = f"""
 <!DOCTYPE html>
