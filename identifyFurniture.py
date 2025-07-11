@@ -744,9 +744,9 @@ class FurnitureDetectionSorter:
         print(f"   Maximum: {np.max(y_scores):.3f}")
         
         # 不同閾值下的統計
-        print(f"\n🎯 Detection Results at Different Thresholds:")
-        print(f"{'Threshold':<10} {'Success Count':<14} {'Success Rate':<14} {'Recommendation':<20}")
-        print("-"*65)
+        # print(f"\n🎯 Detection Results at Different Thresholds:")
+        # print(f"{'Threshold':<10} {'Success Count':<14} {'Success Rate':<14} {'Recommendation':<20}")
+        # print("-"*65)
         
         thresholds_to_test = [0.1, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9]
         best_threshold = None
@@ -767,11 +767,11 @@ class FurnitureDetectionSorter:
             else:
                 recommendation = "Too Strict ❌"
                 
-            print(f"{threshold:<10.1f} {detected_count:<14} {detection_rate:<14.1%} {recommendation:<20}")
+        #     print(f"{threshold:<10.1f} {detected_count:<14} {detection_rate:<14.1%} {recommendation:<20}")
         
-        print("-"*65)
-        if best_threshold:
-            print(f"💡 Suggested Threshold: {best_threshold} (Success Rate: {best_detection_rate:.1%})")
+        # print("-"*65)
+        # if best_threshold:
+        #     print(f"💡 Suggested Threshold: {best_threshold} (Success Rate: {best_detection_rate:.1%})")
         
         # 繪製置信度分佈圖
         self._plot_confidence_distribution(y_scores)
